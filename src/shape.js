@@ -1,14 +1,28 @@
 const WEBGL_TRIANGLES = 4;
 
 class Shape {
-    constructor(size, color, modelMatrix) {
+    constructor(size, color, modelViewMatrix = null, modelPosMatrix = null, modelShapeMatrix = null) {
         this.type  = WEBGL_TRIANGLES;
         this.size  = size;
         this.color = color;
-        this.modelMatrix = new Matrix4();
+        this.modelViewMatrix  = new Matrix4();
+        this.modelPosMatrix   = new Matrix4();
+        this.modelShapeMatrix = new Matrix4();
 
-        if (modelMatrix) {
-            this.modelMatrix.set(modelMatrix);
+        this.modelViewMatrix.setIdentity();
+        this.modelPosMatrix.setIdentity();
+        this.modelShapeMatrix.setIdentity();
+
+        if (modelViewMatrix !== null) {
+            this.modelViewMatrix.set(modelViewMatrix);
+        }
+
+        if (modelPosMatrix !== null) {
+            this.modelPosMatrix.set(modelPosMatrix);
+        }
+
+        if (modelShapeMatrix !== null) {
+            this.modelShapeMatrix.set(modelShapeMatrix);
         }
 
         // Initialize positions, colors, and normals for webGL
@@ -61,17 +75,17 @@ class Shape {
     }
 
     translate(pos = [0, 0, 0]) {
-        this.modelMatrix.translate(pos[0], pos[1], pos[2]);
+        this.modelShapeMatrix.translate(pos[0], pos[1], pos[2]);
     }
 
     rotate(angle = [0, 0, 0]) {
-        this.modelMatrix.rotate(angle[2], 0.0, 0.0, 1.0);
-        this.modelMatrix.rotate(angle[1], 0.0, 1.0, 0.0);
-        this.modelMatrix.rotate(angle[0], 1.0, 0.0, 0.0);
+        this.modelShapeMatrix.rotate(angle[2], 0.0, 0.0, 1.0);
+        this.modelShapeMatrix.rotate(angle[1], 0.0, 1.0, 0.0);
+        this.modelShapeMatrix.rotate(angle[0], 1.0, 0.0, 0.0);
     }
 
     scale(scale = [1.0, 1.0, 1.0]) {
-        this.modelMatrix.scale(scale[0], scale[1], scale[2]);
+        this.modelShapeMatrix.scale(scale[0], scale[1], scale[2]);
     }
 
     transform(pos, angle, scale) {
@@ -82,8 +96,8 @@ class Shape {
 }
 
 class Cube extends Shape {
-    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], defaultModelMatrix = null) {
-        super(size, color, defaultModelMatrix);
+    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], viewMatrix = null, posMatrix = null, shapeMatrix = null) {
+        super(size, color, viewMatrix, posMatrix, shapeMatrix);
 
         let cubeVertices = [];
         let cubeColors   = [];
@@ -122,8 +136,8 @@ class Cube extends Shape {
 }
 
 class Sphere extends Shape {
-    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], detail = 20, defaultModelMatrix = null) {
-        super(size, color, defaultModelMatrix);
+    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], detail = 20, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
+        super(size, color, viewMatrix, posMatrix, shapeMatrix);
 
         let sphereVertices = [];
         let sphereColors   = [];
@@ -179,8 +193,8 @@ class Sphere extends Shape {
 }
 
 class Cylinder extends Shape {
-    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], detail = 20, defaultModelMatrix = null) {
-        super(size, color, defaultModelMatrix);
+    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], detail = 20, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
+        super(size, color, viewMatrix, posMatrix, shapeMatrix);
 
         let cylinderVertices = [];
         let cylinderColors   = [];

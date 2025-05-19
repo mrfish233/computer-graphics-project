@@ -76,7 +76,7 @@ class WebGL {
             console.log("Shape not initialized\n");
             return;
         }
-        else if (shape.modelMatrix === null) {
+        else if (shape.modelViewMatrix === null || shape.modelPosMatrix === null || shape.modelShapeMatrix === null) {
             console.log("Matrices not initialized\n");
             return;
         }
@@ -87,20 +87,26 @@ class WebGL {
         this.#bindAttribute('a_position', shape.positions);
 
         // set up the mvp matrix and normal matrix
-        var mvpMatrix    = new Matrix4();
-        var normalMatrix = new Matrix4();
+        let modelMatrix  = new Matrix4();
+        let mvpMatrix    = new Matrix4();
+        let normalMatrix = new Matrix4();
+
+        modelMatrix.setIdentity();
+        modelMatrix.multiply(shape.modelViewMatrix);
+        modelMatrix.multiply(shape.modelPosMatrix);
+        modelMatrix.multiply(shape.modelShapeMatrix);
 
         mvpMatrix.setPerspective(this.perspective.fov, this.perspective.aspect, this.perspective.near, this.perspective.far);
         mvpMatrix.lookAt(this.view.eye[0], this.view.eye[1], this.view.eye[2],
                          this.view.at[0],  this.view.at[1],  this.view.at[2],
                          this.view.up[0],  this.view.up[1],  this.view.up[2]);
-        mvpMatrix.multiply(shape.modelMatrix);
+        mvpMatrix.multiply(modelMatrix);
 
-        normalMatrix.setInverseOf(shape.modelMatrix);
+        normalMatrix.setInverseOf(modelMatrix);
         normalMatrix.transpose();
 
         // bind matrices
-        this.#bindUniformMatrix4('u_model_matrix',  shape.modelMatrix.elements);
+        this.#bindUniformMatrix4('u_model_matrix',  modelMatrix.elements);
         this.#bindUniformMatrix4('u_mvp_matrix',    mvpMatrix.elements);
         this.#bindUniformMatrix4('u_normal_matrix', normalMatrix.elements);
 
