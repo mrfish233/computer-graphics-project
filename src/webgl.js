@@ -8,6 +8,8 @@ class WebGL {
         this.perspective = null;
         this.view = null;
 
+        this.shapes = [];
+
         if (!this.gl) {
             console.log("Failed to get the rendering context for WebGL");
         }
@@ -58,18 +60,9 @@ class WebGL {
         this.view = view;
     }
 
-    draw(shape) {
-        if (!shape instanceof Shape) {
+    addShape(shape) {
+        if (!(shape instanceof Shape)) {
             console.log("Bad shape\n");
-            return;
-        }
-
-        if (this.environment === null) {
-            console.log("Environment not set\n");
-            return;
-        }
-        else if (this.perspective === null || this.view === null) {
-            console.log("Perspective or view not set\n");
             return;
         }
         else if (shape.type === null || shape.positions === null || shape.colors === null || shape.normals === null || shape.numOfVertices === 0) {
@@ -77,10 +70,33 @@ class WebGL {
             return;
         }
         else if (shape.modelViewMatrix === null || shape.modelPosMatrix === null || shape.modelShapeMatrix === null) {
-            console.log("Matrices not initialized\n");
+            console.log("Shape matrices not initialized\n");
             return;
         }
 
+        this.shapes.push(shape);
+    }
+
+    draw() {
+        if (this.shapes.length === 0) {
+            console.log("No shapes to draw\n");
+            return;
+        }
+        else if (this.environment === null) {
+            console.log("Environment not set\n");
+            return;
+        }
+        else if (this.perspective === null || this.view === null) {
+            console.log("Perspective or view not set\n");
+            return;
+        }
+
+        for (let i = 0; i < this.shapes.length; i++) {
+            this.#drawOne(this.shapes[i]);
+        }
+    }
+
+    #drawOne(shape) {
         // bind vertices and colors
         this.#bindAttribute('a_color',    shape.colors);
         this.#bindAttribute('a_normal',   shape.normals);
@@ -119,6 +135,9 @@ class WebGL {
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.gl.enable(this.gl.DEPTH_TEST);
+
+        // clear shape array
+        this.shapes = [];
     }
 
     #initShader(type, source) {
