@@ -162,17 +162,17 @@ class WebGL {
     }
 
     #bindAttribute(name, data) {
-        var buffer = this.gl.createBuffer();
+        let buffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
 
-        var location = this.gl.getAttribLocation(this.program, name);
+        let location = this.gl.getAttribLocation(this.program, name);
         this.gl.vertexAttribPointer(location, 3, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(location);
     }
 
     #bindUniform(name, data) {
-        var location = this.gl.getUniformLocation(this.program, name);
+        let location = this.gl.getUniformLocation(this.program, name);
 
         if (Array.isArray(data)) {
             if (data.length === 4) {
@@ -194,7 +194,7 @@ class WebGL {
     }
 
     #bindUniformMatrix4(name, data) {
-        var location = this.gl.getUniformLocation(this.program, name);
+        let location = this.gl.getUniformLocation(this.program, name);
         this.gl.uniformMatrix4fv(location, false, data);
     }
 }

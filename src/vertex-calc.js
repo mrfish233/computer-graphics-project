@@ -1,7 +1,7 @@
 function convertVertexArray(vertices, indices) {
-    var elements = [];
+    let elements = [];
 
-    for (var i = 0; i < indices.length; i++) {
+    for (let i = 0; i < indices.length; i++) {
         elements.push(...vertices[indices[i]]);
     }
 
@@ -9,25 +9,25 @@ function convertVertexArray(vertices, indices) {
 }
 
 function computeNormalArray(vertices, indices) {
-    var normals = [];
+    let normals = [];
 
-    for (var i = 0; i < indices.length; i += 3) {
-        var v0 = vertices[indices[i]];
-        var v1 = vertices[indices[i + 1]];
-        var v2 = vertices[indices[i + 2]];
+    for (let i = 0; i < indices.length; i += 3) {
+        let v0 = vertices[indices[i]];
+        let v1 = vertices[indices[i + 1]];
+        let v2 = vertices[indices[i + 2]];
 
         // Compute the normal vector using cross product
-        var u = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
-        var v = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+        let u = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+        let v = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
 
-        var normal = [
+        let normal = [
             u[1] * v[2] - u[2] * v[1],
             u[2] * v[0] - u[0] * v[2],
             u[0] * v[1] - u[1] * v[0]
         ];
 
         // Normalize the normal vector
-        var length = Math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2);
+        let length = Math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2);
         normal = normal.map(n => n / length);
 
         normals.push(...normal);

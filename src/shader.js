@@ -1,4 +1,4 @@
-var VSHADER_SOURCE = `
+const VSHADER_SOURCE = `
     attribute vec4 a_color;
     attribute vec4 a_normal;
     attribute vec4 a_position;
@@ -19,7 +19,7 @@ var VSHADER_SOURCE = `
     }
 `;
 
-var FSHADER_SOURCE = `
+const FSHADER_SOURCE = `
     precision mediump float;
 
     uniform vec3 u_light_position;
