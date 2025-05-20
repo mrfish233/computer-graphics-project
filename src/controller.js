@@ -61,35 +61,21 @@ function keyboardController(keys) {
 Mouse input controller
 Usage:
 mouseController(canvas, {
-    mousedown: (event) => { console.log(event.clientX + ' ' + event.clientY); },
-    mouseup: (event) => { console.log(event.clientX + ' ' + event.clientY); },
-    mousemove: (event) => { console.log(event.clientX + ' ' + event.clientY); },
-    mousewheel: (event) => { console.log(event.deltaY); }
+    down: (event) => { console.log(event.clientX + ' ' + event.clientY); },
+    up: (event) => { console.log(event.clientX + ' ' + event.clientY); },
+    move: (event) => { console.log(event.clientX + ' ' + event.clientY); },
+    wheel: (event) => { console.log(event.deltaY); }
 });
- */
+*/
 
 function mouseController(canvas, mouse) {
-    canvas.onmousedown = function (event) {
-        if (mouse.mousedown) {
-            mouse.mousedown(event);
-        }
-    }
+    const events = ['down', 'up', 'move', 'wheel'];
 
-    canvas.onmouseup = function (event) {
-        if (mouse.mouseup) {
-            mouse.mouseup(event);
-        }
-    }
-
-    canvas.onmousemove = function (event) {
-        if (mouse.mousemove) {
-            mouse.mousemove(event);
-        }
-    }
-
-    canvas.onmousewheel = function (event) {
-        if (mouse.mousewheel) {
-            mouse.mousewheel(event);
-        }
-    }
+    events.forEach(event => {
+        canvas['onmouse' + event] = function(e) {
+            if (mouse[event]) {
+                mouse[event](e);
+            }
+        };
+    });
 }
