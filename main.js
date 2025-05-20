@@ -1,5 +1,8 @@
-let canvas = null;
+// WebGL variables
+
 let webgl  = null;
+let WIDTH  = 600;
+let HEIGHT = 600;
 
 let lightPosition    = [1.0, 3.0, 3.0];
 let cameraPosition   = [2.0, 2.0, 2.0];
@@ -17,8 +20,8 @@ let view = {
 };
 
 function main() {
-    canvas = document.getElementById('canvas');
-    webgl  = new WebGL(canvas);
+    const canvasDiv = document.getElementsByClassName('cv');
+    webgl = new WebGL(canvasDiv, WIDTH, HEIGHT);
     webgl.init();
 
     draw();

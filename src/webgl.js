@@ -1,7 +1,13 @@
 class WebGL {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.gl = canvas.getContext("webgl2");
+    constructor(canvasDiv, width, height) {
+        this.canvas = document.createElement('canvas');
+        this.canvas.setAttribute('width', width);
+        this.canvas.setAttribute('height', height);
+        this.canvas.setAttribute('id', 'canvas');
+
+        canvasDiv[0].appendChild(this.canvas);
+
+        this.gl = this.canvas.getContext("webgl2");
         this.program = null;
 
         this.environment = null;
