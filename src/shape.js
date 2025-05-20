@@ -34,6 +34,14 @@ class Shape {
         this.numOfVertices = 0;
     }
 
+    getPos() {
+        let mat = new Matrix4(this.modelPosMatrix);
+        mat.multiply(this.modelShapeMatrix);
+
+        let pos = mat.elements;
+        return [pos[12], pos[13], pos[14]];
+    }
+
     setPosition(positions) {
         this.positions = positions;
         this.numOfVertices = positions.length / 3;
