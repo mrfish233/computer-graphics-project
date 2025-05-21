@@ -83,12 +83,14 @@ class Shape {
 }
 
 class Cube extends Shape {
-    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], viewMatrix = null, posMatrix = null, shapeMatrix = null) {
-        super(size, color, viewMatrix, posMatrix, shapeMatrix);
+    constructor(size = [1.0, 1.0, 1.0], texture, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
+        super(size, texture, viewMatrix, posMatrix, shapeMatrix);
 
         let cubeVertices = [];
-        let cubeColors   = [];
         let cubeIndices  = [];
+
+        let cubeTexCoords  = [];
+        let cubeTexIndices = [];
 
         let halfWidth  = this.size[0] / 2;
         let halfHeight = this.size[1] / 2;
@@ -105,20 +107,33 @@ class Cube extends Shape {
             [ halfWidth, -halfHeight, -halfDepth],  // 7: bottom-right-back
         ];
 
-        for (let i = 0; i < 8; i++) {
-            cubeColors.push(Array.isArray(this.color) ? this.color : [1.0, 0.5, 0.5]);
-        }
-
         cubeIndices = [
             0, 1, 2, 0, 2, 3,  // front
-            0, 3, 4, 4, 3, 7,  // right
-            0, 5, 1, 0, 4, 5,  // up
-            5, 6, 1, 1, 6, 2,  // left
+            4, 0, 3, 4, 3, 7,  // right
+            4, 5, 1, 4, 1, 0,  // up
+            1, 5, 6, 1, 6, 2,  // left
             3, 2, 6, 3, 6, 7,  // bottom
-            4, 7, 6, 4, 6, 5   // back
+            5, 4, 7, 5, 7, 6   // back
         ];
 
-        this.setVerticesByIndices(cubeVertices, cubeColors, cubeIndices);
+        cubeTexCoords = [
+            [1.0, 1.0], [0.0, 1.0], [0.0, 0.0], [1.0, 0.0]
+        ];
+
+        cubeTexIndices = [
+            0, 1, 2, 0, 2, 3,  // front
+            0, 1, 2, 0, 2, 3,  // right
+            0, 1, 2, 0, 2, 3,  // up
+            0, 1, 2, 0, 2, 3,  // left
+            0, 1, 2, 0, 2, 3,  // bottom
+            0, 1, 2, 0, 2, 3,  // back
+        ];
+
+        let normals   = computeNormalArray(cubeVertices, cubeIndices);
+        let positions = convertVertexArray(cubeVertices, cubeIndices);
+        let texcoords = convertVertexArray(cubeTexCoords, cubeTexIndices);
+
+        this.setVertices(normals, positions, texcoords);
     }
 }
 
