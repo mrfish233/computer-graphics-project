@@ -1,10 +1,18 @@
 const WEBGL_TRIANGLES = 4;
 
 class Shape {
-    constructor(size, color, modelViewMatrix = null, modelPosMatrix = null, modelShapeMatrix = null) {
-        this.type  = WEBGL_TRIANGLES;
-        this.size  = size;
-        this.color = color;
+    constructor(size, texture, modelViewMatrix = null, modelPosMatrix = null, modelShapeMatrix = null) {
+        this.type = WEBGL_TRIANGLES;
+        this.size = size;
+
+        // Initialize vertices for WebGL
+        this.normals   = null;
+        this.positions = null;
+        this.texcoords = null;
+        this.texture   = texture;
+
+        this.numOfVertices = 0;
+
         this.modelViewMatrix  = new Matrix4();
         this.modelPosMatrix   = new Matrix4();
         this.modelShapeMatrix = new Matrix4();
@@ -24,14 +32,6 @@ class Shape {
         if (modelShapeMatrix !== null) {
             this.modelShapeMatrix.set(modelShapeMatrix);
         }
-
-        // Initialize positions, colors, and normals for webGL
-        this.positions = null;
-        this.colors    = null;
-        this.normals   = null;
-
-        // Initialize number of vertices
-        this.numOfVertices = 0;
     }
 
     getPos() {
@@ -42,44 +42,29 @@ class Shape {
         return [pos[12], pos[13], pos[14]];
     }
 
-    setPosition(positions) {
-        this.positions = positions;
-        this.numOfVertices = positions.length / 3;
-    }
-
-    setColor(colors) {
-        this.colors = colors;
+    setVertices(normals, positions, texcoords) {
+        this.setNormal(normals);
+        this.setPosition(positions);
+        this.setTexcoord(texcoords);
     }
 
     setNormal(normals) {
         this.normals = normals;
     }
 
-    setVertices(positions, colors, normals) {
-        this.setPosition(positions);
-        this.setColor(colors);
-        this.setNormal(normals);
+    setPosition(positions) {
+        this.positions = positions;
+        this.numOfVertices = positions.length / 3;
     }
 
-    setPositionByIndices(vertexList, indices) {
-        let positions = convertVertexArray(vertexList, indices);
-        this.setPosition(positions);
+    setTexcoord(texcoords) {
+        this.texcoords = texcoords;
     }
 
-    setColorByIndices(colorList, indices) {
-        let colors = convertVertexArray(colorList, indices);
-        this.setColor(colors);
-    }
-
-    setNormalByIndices(vertexList, indices) {
-        let normals = computeNormalArray(vertexList, indices);
-        this.setNormal(normals);
-    }
-
-    setVerticesByIndices(vertexList, colorList, indices) {
-        this.setPositionByIndices(vertexList, indices);
-        this.setColorByIndices(colorList, indices);
-        this.setNormalByIndices(vertexList, indices);
+    transform(pos, angle, scale) {
+        this.translate(pos);
+        this.rotate(angle);
+        this.scale(scale);
     }
 
     translate(pos = [0, 0, 0]) {
@@ -94,12 +79,6 @@ class Shape {
 
     scale(scale = [1.0, 1.0, 1.0]) {
         this.modelShapeMatrix.scale(scale[0], scale[1], scale[2]);
-    }
-
-    transform(pos, angle, scale) {
-        this.translate(pos);
-        this.rotate(angle);
-        this.scale(scale);
     }
 }
 
