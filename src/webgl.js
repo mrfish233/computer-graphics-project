@@ -14,7 +14,8 @@ class WebGL {
         this.perspective = null;
         this.view = null;
 
-        this.shapes = [];
+        this.shapes   = [];
+        this.textures = {};
 
         if (!this.gl) {
             console.log("Failed to get the rendering context for WebGL");
@@ -53,12 +54,12 @@ class WebGL {
         };
 
         // bind environment variables
-        this.#bindUniform('u_light_position', lightPosition);
-        this.#bindUniform('u_view_position',  cameraPosition);
-        this.#bindUniform('u_ambient_light',  lightCoefficient.ambient);
-        this.#bindUniform('u_diffuse_light',  lightCoefficient.diffuse);
-        this.#bindUniform('u_specular_light', lightCoefficient.specular);
-        this.#bindUniform('u_shininess',      lightCoefficient.shininess);
+        this.#bindUniformFloat('u_light_position', lightPosition);
+        this.#bindUniformFloat('u_view_position',  cameraPosition);
+        this.#bindUniformFloat('u_ambient_light',  lightCoefficient.ambient);
+        this.#bindUniformFloat('u_diffuse_light',  lightCoefficient.diffuse);
+        this.#bindUniformFloat('u_specular_light', lightCoefficient.specular);
+        this.#bindUniformFloat('u_shininess',      lightCoefficient.shininess);
     }
 
     setPerspectiveView(perspective, view) {
@@ -66,13 +67,31 @@ class WebGL {
         this.view = view;
     }
 
+    addTexture(texture, name) {
+        let tex = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
+        this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, 1);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, texture);
+
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+        this.textures[name] = tex;
+    }
+
     addShape(shape) {
         if (!(shape instanceof Shape)) {
             console.log("Bad shape\n");
             return;
         }
-        else if (shape.type === null || shape.positions === null || shape.colors === null || shape.normals === null || shape.numOfVertices === 0) {
+        else if (shape.type === null || shape.positions === null || shape.normals === null || shape.numOfVertices === 0) {
             console.log("Shape not initialized\n");
+            return;
+        }
+        else if (shape.texcoords === null || shape.texture === null) {
+            console.log("Shape texture not initialized\n");
             return;
         }
         else if (shape.modelViewMatrix === null || shape.modelPosMatrix === null || shape.modelShapeMatrix === null) {
@@ -103,10 +122,12 @@ class WebGL {
     }
 
     #drawOne(shape) {
-        // bind vertices and colors
-        this.#bindAttribute('a_color',    shape.colors);
-        this.#bindAttribute('a_normal',   shape.normals);
-        this.#bindAttribute('a_position', shape.positions);
+        // bind vertices
+        this.#bindAttribute('a_normal',   3, shape.normals);
+        this.#bindAttribute('a_position', 3, shape.positions);
+
+        // bind texture
+        this.#bindTexture(shape.texture, shape.texcoords);
 
         // set up the mvp matrix and normal matrix
         let modelMatrix  = new Matrix4();
@@ -161,17 +182,27 @@ class WebGL {
         return shader;
     }
 
-    #bindAttribute(name, data) {
+    #bindAttribute(name, size, data) {
         let buffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
 
         let location = this.gl.getAttribLocation(this.program, name);
-        this.gl.vertexAttribPointer(location, 3, this.gl.FLOAT, false, 0, 0);
+        this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(location);
     }
 
-    #bindUniform(name, data) {
+    #bindTexture(texture, texcoords) {
+        // texture coordinates
+        this.#bindAttribute('a_texcoord', 2, texcoords);
+
+        // activate texture
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[texture]);
+        this.#bindUniformInt('u_texture', 0);
+    }
+
+    #bindUniformFloat(name, data) {
         let location = this.gl.getUniformLocation(this.program, name);
 
         if (Array.isArray(data)) {
@@ -191,6 +222,11 @@ class WebGL {
         else {
             this.gl.uniform1f(location, data);
         }
+    }
+
+    #bindUniformInt(name, data) {
+        let location = this.gl.getUniformLocation(this.program, name);
+        this.gl.uniform1i(location, data);
     }
 
     #bindUniformMatrix4(name, data) {
