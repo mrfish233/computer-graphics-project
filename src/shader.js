@@ -1,21 +1,21 @@
 const VSHADER_SOURCE = `
-    attribute vec4 a_color;
     attribute vec4 a_normal;
     attribute vec4 a_position;
+    attribute vec2 a_texcoord;
 
     uniform mat4 u_mvp_matrix;
     uniform mat4 u_model_matrix;
     uniform mat4 u_normal_matrix;
 
-    varying vec4 v_color;
     varying vec3 v_normal;
     varying vec3 v_position;
+    varying vec2 v_texcoord;
 
     void main() {
         gl_Position = u_mvp_matrix * a_position;
-        v_position  = (u_model_matrix * a_position).xyz;
         v_normal    = normalize((u_normal_matrix * a_normal).xyz);
-        v_color     = a_color;
+        v_position  = (u_model_matrix * a_position).xyz;
+        v_texcoord  = a_texcoord;
     }
 `;
 
@@ -30,14 +30,19 @@ const FSHADER_SOURCE = `
     uniform float u_specular_light;
     uniform float u_shininess;
 
-    varying vec4 v_color;
+    uniform sampler2D u_texture;
+
     varying vec3 v_normal;
     varying vec3 v_position;
+    varying vec2 v_texcoord;
 
     void main() {
-        // light color
-        vec3 ambient_color  = v_color.rgb;
-        vec3 diffuse_color  = v_color.rgb;
+        // texture color
+        vec3 texture_color = texture2D(u_texture, v_texcoord).rgb;
+
+        // light colors
+        vec3 ambient_color  = texture_color;
+        vec3 diffuse_color  = texture_color;
         vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
         // normalize the normal vector
