@@ -37,22 +37,28 @@ class Shape {
     }
 
     setVertices(normals, positions, texcoords) {
-        this.setNormal(normals);
-        this.setPosition(positions);
-        this.setTexcoord(texcoords);
-    }
-
-    setNormal(normals) {
-        this.normals = normals;
-    }
-
-    setPosition(positions) {
+        this.normals   = normals;
         this.positions = positions;
+        this.texcoords = texcoords;
         this.numOfVertices = positions.length / 3;
     }
 
-    setTexcoord(texcoords) {
-        this.texcoords = texcoords;
+    setModelMatrices(modelViewMatrix, modelPosMatrix, modelShapeMatrix) {
+        this.modelViewMatrix  = modelViewMatrix;
+        this.modelPosMatrix   = modelPosMatrix;
+        this.modelShapeMatrix = modelShapeMatrix;
+    }
+
+    setModelViewMatrix(viewMatrix) {
+        this.modelViewMatrix = viewMatrix;
+    }
+
+    setModelPosMatrix(posMatrix) {
+        this.modelPosMatrix = posMatrix;
+    }
+
+    setModelShapeMatrix(shapeMatrix) {
+        this.modelShapeMatrix = shapeMatrix;
     }
 
     transform(pos, angle, scale) {

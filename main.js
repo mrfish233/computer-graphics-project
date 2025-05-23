@@ -68,11 +68,25 @@ let view = {
     up:  [0.0, 1.0, 0.0]
 };
 
+// shapes
+
+let cube1 = null;
+let cube2 = null;
+let cube_fix = null;
+
 async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
     webgl = new WebGL(canvasDiv, WIDTH, HEIGHT);
     await webgl.init();
 
+    initTextures();
+    initShapes();
+    mouseController(webgl.canvas, mouseControl);
+
+    draw();
+}
+
+function initTextures() {
     for (let tex in textures) {
         let img = new Image();
         img.src = textures[tex].src;
@@ -80,10 +94,20 @@ async function main() {
             webgl.addTexture(img, textures[tex].name);
         }
     }
+}
 
-    mouseController(webgl.canvas, mouseControl);
+function initShapes() {
+    let modelViewMatrix = new Matrix4();
+    modelViewMatrix.rotate(angleX, 0, 1, 0);
 
-    draw();
+    cube1 = new Cube([1.0, 1.0, 3.0], textures['white'].name);
+    webgl.addShape(cube1);
+
+    cube2 = new Cube([3.0, 1.0, 1.0], textures['white'].name);
+    webgl.addShape(cube2);
+
+    cube_fix = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
+    webgl.addShape(cube_fix);
 }
 
 function draw() {
@@ -93,9 +117,6 @@ function draw() {
 
     angleX = reangle(angleX);
 
-    let modelViewMatrix = new Matrix4();
-    modelViewMatrix.rotate(angleX, 0, 1, 0);
-
     let cube1Pos = new Matrix4();
     cube1Pos.translate(0, 0, -2);
     cube1Pos.rotate(angleX, 0, 1, 0);
@@ -104,15 +125,8 @@ function draw() {
     cube2Pos.translate(0, 0, 2);
     cube2Pos.rotate(angleX, 0, 1, 0);
 
-    let cube1 = new Cube([1.0, 1.0, 3.0], textures['white'].name, null, cube1Pos);
-    webgl.addShape(cube1);
-
-    let cube2 = new Cube([3.0, 1.0, 1.0], textures['white'].name, null, cube2Pos);
-    webgl.addShape(cube2);
-
-    let cube_fix = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
-    cube_fix.translate([0, 0, 0]);
-    webgl.addShape(cube_fix);
+    cube1.setModelPosMatrix(cube1Pos);
+    cube2.setModelPosMatrix(cube2Pos);
 
     webgl.draw();
 
