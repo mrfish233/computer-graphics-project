@@ -43,10 +43,10 @@ class Shape {
         this.numOfVertices = this.positions.length / 3;
     }
 
-    setModelMatrices(modelViewMatrix, modelPosMatrix, modelShapeMatrix) {
-        this.modelViewMatrix  = modelViewMatrix;
-        this.modelPosMatrix   = modelPosMatrix;
-        this.modelShapeMatrix = modelShapeMatrix;
+    setModelMatrices(modelViewMatrix = null, modelPosMatrix = null, modelShapeMatrix = null) {
+        this.modelViewMatrix  = modelViewMatrix  || new Matrix4();
+        this.modelPosMatrix   = modelPosMatrix   || new Matrix4();
+        this.modelShapeMatrix = modelShapeMatrix || new Matrix4();
     }
 
     setModelViewMatrix(viewMatrix) {

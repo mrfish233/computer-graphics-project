@@ -118,6 +118,21 @@ class WebGL {
         this.shapes.push(shape);
     }
 
+    addModel(model) {
+        if (!(model instanceof Model)) {
+            console.log("Bad model\n");
+            return;
+        }
+        else if (model.shapes.length === 0) {
+            console.log("Model not initialized\n");
+            return;
+        }
+
+        for (let i = 0; i < model.shapes.length; i++) {
+            this.addShape(model.shapes[i]);
+        }
+    }
+
     draw() {
         if (this.shapes.length === 0) {
             console.log("No shapes to draw\n");
