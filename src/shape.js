@@ -37,10 +37,10 @@ class Shape {
     }
 
     setVertices(normals, positions, texcoords) {
-        this.normals   = normals;
-        this.positions = positions;
-        this.texcoords = texcoords;
-        this.numOfVertices = positions.length / 3;
+        this.normals   = new Float32Array(normals);
+        this.positions = new Float32Array(positions);
+        this.texcoords = new Float32Array(texcoords);
+        this.numOfVertices = this.positions.length / 3;
     }
 
     setModelMatrices(modelViewMatrix, modelPosMatrix, modelShapeMatrix) {

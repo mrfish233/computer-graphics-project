@@ -5,7 +5,7 @@ function convertVertexArray(vertices, indices) {
         elements.push(...vertices[indices[i]]);
     }
 
-    return new Float32Array(elements);
+    return elements;
 }
 
 function computeNormalArray(vertices, indices) {
@@ -35,7 +35,7 @@ function computeNormalArray(vertices, indices) {
         normals.push(...normal);
     }
 
-    return new Float32Array(normals);
+    return normals;
 }
 
 function getEulerAngles(matrix) {
