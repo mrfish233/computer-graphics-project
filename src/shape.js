@@ -13,25 +13,13 @@ class Shape {
 
         this.numOfVertices = 0;
 
-        this.modelViewMatrix  = new Matrix4();
-        this.modelPosMatrix   = new Matrix4();
-        this.modelShapeMatrix = new Matrix4();
+        // Initialize matrices for WebGL
+        let identityMatrix = new Matrix4();
+        identityMatrix.setIdentity();
 
-        this.modelViewMatrix.setIdentity();
-        this.modelPosMatrix.setIdentity();
-        this.modelShapeMatrix.setIdentity();
-
-        if (modelViewMatrix !== null) {
-            this.modelViewMatrix.set(modelViewMatrix);
-        }
-
-        if (modelPosMatrix !== null) {
-            this.modelPosMatrix.set(modelPosMatrix);
-        }
-
-        if (modelShapeMatrix !== null) {
-            this.modelShapeMatrix.set(modelShapeMatrix);
-        }
+        this.modelViewMatrix  = new Matrix4(modelViewMatrix  || identityMatrix);
+        this.modelPosMatrix   = new Matrix4(modelPosMatrix   || identityMatrix);
+        this.modelShapeMatrix = new Matrix4(modelShapeMatrix || identityMatrix);
     }
 
     getPos() {
