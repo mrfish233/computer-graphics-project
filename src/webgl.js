@@ -22,10 +22,13 @@ class WebGL {
         }
     }
 
-    init() {
-        // vertex shader source code
-        const vertexShader   = this.#initShader(this.gl.VERTEX_SHADER, VSHADER_SOURCE);
-        const fragmentShader = this.#initShader(this.gl.FRAGMENT_SHADER, FSHADER_SOURCE);
+    async init() {
+        // load shaders
+        const vertexShaderSource   = await this.#loadShader('src/shader/vertex.glsl');
+        const fragmentShaderSource = await this.#loadShader('src/shader/fragment.glsl');
+
+        const vertexShader   = this.#initShader(this.gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = this.#initShader(this.gl.FRAGMENT_SHADER, fragmentShaderSource);
 
         if (!vertexShader || !fragmentShader) {
             console.log("Error creating shaders");
@@ -165,6 +168,11 @@ class WebGL {
 
         // clear shape array
         this.shapes = [];
+    }
+
+    async #loadShader(url) {
+        const response = await fetch(url);
+        return response.text();
     }
 
     #initShader(type, source) {

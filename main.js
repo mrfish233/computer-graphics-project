@@ -19,10 +19,10 @@ let view = {
     up:  [0.0, 1.0, 0.0]
 };
 
-function main() {
+async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
     webgl = new WebGL(canvasDiv, WIDTH, HEIGHT);
-    webgl.init();
+    await webgl.init();
 
     draw();
 }
