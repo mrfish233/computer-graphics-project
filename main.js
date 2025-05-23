@@ -40,6 +40,7 @@ let mouseControl = {
 
 // texture variables
 
+let texture_count = 0;
 let textures = {
     white: {
         src: 'assets/white.png',
@@ -92,6 +93,7 @@ function initTextures() {
         img.src = textures[tex].src;
         img.onload = () => {
             webgl.addTexture(img, textures[tex].name);
+            texture_count++;
         }
     }
 }
@@ -111,6 +113,11 @@ function initShapes() {
 }
 
 function draw() {
+    if (texture_count < Object.keys(textures).length) {
+        requestAnimationFrame(draw);
+        return;
+    }
+
     webgl.clear();
     webgl.setEnvironment(lightPosition, cameraPosition, lightCoefficient);
     webgl.setPerspectiveView(perspective, view);
