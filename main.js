@@ -9,7 +9,8 @@ let HEIGHT = 600;
 let mouseLastX = 0;
 let mouseDrag  = false;
 
-let angleX  = 0;
+let angleX = 0;
+let angleY = 0;
 let canReangle = true;
 
 let mouseControl = {
@@ -31,10 +32,19 @@ let mouseControl = {
     move: (event) => {
         if (mouseDrag) {
             let factor = 100 / HEIGHT;
-            angleX += (event.clientX - mouseLastX) * factor;
-            angleX = (angleX + 360) % 360;
+            angleX = (angleX + (event.clientX - mouseLastX) * factor + 360) % 360;
+            angleY = (angleY + (event.clientY - mouseLastY) * factor + 360) % 360;
         }
         mouseLastX = event.clientX;
+        mouseLastY = event.clientY;
+    },
+    wheel: (event) => {
+        if (event.deltaY > 0) {
+            perspective.fov += 1;
+        }
+        else {
+            perspective.fov -= 1;
+        }
     }
 };
 
@@ -50,6 +60,10 @@ let textures = {
         src: 'assets/blue.png',
         name: 'blue',
     },
+    soccer: {
+        src: 'assets/soccer/soccer.jpg',
+        name: 'soccer'
+    }
 };
 
 // light and camera variables
@@ -73,7 +87,8 @@ let view = {
 
 let cube1 = null;
 let cube2 = null;
-let cube_fix = null;
+let cube3 = null;
+let soccer = null;
 
 async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
@@ -81,7 +96,7 @@ async function main() {
     await webgl.init();
 
     initTextures();
-    initShapes();
+    await initShapes();
     mouseController(webgl.canvas, mouseControl);
 
     draw();
@@ -98,18 +113,20 @@ function initTextures() {
     }
 }
 
-function initShapes() {
+async function initShapes() {
     let modelViewMatrix = new Matrix4();
     modelViewMatrix.rotate(angleX, 0, 1, 0);
 
     cube1 = new Cube([1.0, 1.0, 3.0], textures['white'].name);
-    webgl.addShape(cube1);
-
     cube2 = new Cube([3.0, 1.0, 1.0], textures['white'].name);
-    webgl.addShape(cube2);
+    cube3 = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
+    soccer = new Model('assets/soccer/soccer.obj', [textures['soccer'].name]);
+    await soccer.init();
 
-    cube_fix = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
-    webgl.addShape(cube_fix);
+    webgl.addShape(cube1);
+    webgl.addShape(cube2);
+    webgl.addShape(cube3);
+    webgl.addModel(soccer);
 }
 
 function draw() {
@@ -123,17 +140,27 @@ function draw() {
     webgl.setPerspectiveView(perspective, view);
 
     angleX = reangle(angleX);
+    angleY = reangle(angleY);
 
     let cube1Pos = new Matrix4();
     cube1Pos.translate(0, 0, -2);
     cube1Pos.rotate(angleX, 0, 1, 0);
 
+    cube1.setModelPosMatrix(cube1Pos);
+
     let cube2Pos = new Matrix4();
     cube2Pos.translate(0, 0, 2);
     cube2Pos.rotate(angleX, 0, 1, 0);
 
-    cube1.setModelPosMatrix(cube1Pos);
     cube2.setModelPosMatrix(cube2Pos);
+
+    let soccerPos = new Matrix4();
+    soccerPos.translate(0, 0.86, 0);
+
+    let soccerShape = new Matrix4();
+    soccerShape.scale(3.0, 3.0, 3.0);
+
+    soccer.setModelMatrices(null, soccerPos, soccerShape);
 
     webgl.draw();
 
