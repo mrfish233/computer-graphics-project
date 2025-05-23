@@ -22,6 +22,12 @@ class Shape {
         this.modelShapeMatrix = new Matrix4(modelShapeMatrix || identityMatrix);
     }
 
+    setBuffers(normalBuffer, positionBuffer, texcoordBuffer) {
+        this.normalBuffer   = normalBuffer;
+        this.positionBuffer = positionBuffer;
+        this.texcoordBuffer = texcoordBuffer;
+    }
+
     getPos() {
         let mat = new Matrix4(this.modelPosMatrix);
         mat.multiply(this.modelShapeMatrix);

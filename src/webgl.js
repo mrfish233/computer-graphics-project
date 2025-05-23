@@ -102,6 +102,19 @@ class WebGL {
             return;
         }
 
+        // set up buffers
+        let normalBuffer   = this.#initBuffer(shape.normals);
+        let positionBuffer = this.#initBuffer(shape.positions);
+        let texcoordBuffer = this.#initBuffer(shape.texcoords);
+
+        if (!normalBuffer || !positionBuffer || !texcoordBuffer) {
+            console.log("Error creating buffers");
+            return;
+        }
+
+        shape.setBuffers(normalBuffer, positionBuffer, texcoordBuffer);
+        this.#clearBuffer();
+
         this.shapes.push(shape);
     }
 
@@ -126,11 +139,12 @@ class WebGL {
 
     #drawOne(shape) {
         // bind vertices
-        this.#bindAttribute('a_normal',   3, shape.normals);
-        this.#bindAttribute('a_position', 3, shape.positions);
+        this.#bindAttribute('a_normal',   3, shape.normalBuffer);
+        this.#bindAttribute('a_position', 3, shape.positionBuffer);
+        this.#bindAttribute('a_texcoord', 2, shape.texcoordBuffer);
 
         // bind texture
-        this.#bindTexture(shape.texture, shape.texcoords);
+        this.#bindTexture(shape.texture);
 
         // set up the mvp matrix and normal matrix
         let modelMatrix  = new Matrix4();
@@ -190,21 +204,34 @@ class WebGL {
         return shader;
     }
 
-    #bindAttribute(name, size, data) {
+    #initBuffer(data) {
         let buffer = this.gl.createBuffer();
+
+        if (!buffer) {
+            console.log("Failed to create buffer");
+            return null;
+        }
+
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
 
+        return buffer;
+    }
+
+    #clearBuffer() {
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
+    }
+
+    #bindAttribute(name, size, buffer) {
         let location = this.gl.getAttribLocation(this.program, name);
+
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
         this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(location);
     }
 
-    #bindTexture(texture, texcoords) {
-        // texture coordinates
-        this.#bindAttribute('a_texcoord', 2, texcoords);
-
-        // activate texture
+    #bindTexture(texture) {
         this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[texture]);
         this.#bindUniformInt('u_texture', 0);
