@@ -83,7 +83,7 @@ class Cube extends Shape {
         let cubeVertices = [];
         let cubeIndices  = [];
 
-        let cubeTexCoords  = [];
+        let cubeTexCoords  = [[1.0, 1.0], [0.0, 1.0], [0.0, 0.0], [1.0, 0.0]];
         let cubeTexIndices = [];
 
         let halfWidth  = this.size[0] / 2;
@@ -110,18 +110,9 @@ class Cube extends Shape {
             5, 4, 7, 5, 7, 6   // back
         ];
 
-        cubeTexCoords = [
-            [1.0, 1.0], [0.0, 1.0], [0.0, 0.0], [1.0, 0.0]
-        ];
-
-        cubeTexIndices = [
-            0, 1, 2, 0, 2, 3,  // front
-            0, 1, 2, 0, 2, 3,  // right
-            0, 1, 2, 0, 2, 3,  // up
-            0, 1, 2, 0, 2, 3,  // left
-            0, 1, 2, 0, 2, 3,  // bottom
-            0, 1, 2, 0, 2, 3,  // back
-        ];
+        for (let i = 0; i < 6; i++) {
+            cubeTexIndices.push(0, 1, 2, 0, 2, 3);
+        }
 
         let normals   = computeNormalArray(cubeVertices, cubeIndices);
         let positions = convertVertexArray(cubeVertices, cubeIndices);
@@ -132,12 +123,14 @@ class Cube extends Shape {
 }
 
 class Sphere extends Shape {
-    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], detail = 20, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
-        super(size, color, viewMatrix, posMatrix, shapeMatrix);
+    constructor(size = [1.0, 1.0, 1.0], texture, detail = 20, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
+        super(size, texture, viewMatrix, posMatrix, shapeMatrix);
 
         let sphereVertices = [];
-        let sphereColors   = [];
         let sphereIndices  = [];
+
+        let sphereTexCoords  = [[1.0, 1.0], [0.0, 1.0], [0.0, 0.0], [1.0, 0.0]];
+        let sphereTexIndices = [];
 
         for (let latNumber = 0; latNumber <= detail; latNumber++) {
             let theta = latNumber * Math.PI / detail;
@@ -156,13 +149,6 @@ class Sphere extends Shape {
 
                 // Add vertex
                 sphereVertices.push([size[0] * x, size[1] * y, size[2] * z]);
-
-                // Add color
-                if (Array.isArray(color)) {
-                    sphereColors.push(color);
-                } else {
-                    sphereColors.push([1.0, 0.5, 0.5]);
-                }
             }
         }
 
@@ -181,20 +167,28 @@ class Sphere extends Shape {
                 sphereIndices.push(first + 1);
                 sphereIndices.push(second + 1);
                 sphereIndices.push(second);
+
+                sphereTexIndices.push(0, 1, 2, 0, 2, 3);
             }
         }
 
-        this.setVerticesByIndices(sphereVertices, sphereColors, sphereIndices);
+        let normals   = computeNormalArray(sphereVertices, sphereIndices);
+        let positions = convertVertexArray(sphereVertices, sphereIndices);
+        let texcoords = convertVertexArray(sphereTexCoords, sphereTexIndices);
+
+        this.setVertices(normals, positions, texcoords);
     }
 }
 
 class Cylinder extends Shape {
-    constructor(size = [1.0, 1.0, 1.0], color = [0.5, 0.5, 0.5], detail = 20, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
-        super(size, color, viewMatrix, posMatrix, shapeMatrix);
+    constructor(size = [1.0, 1.0, 1.0], texture, detail = 20, viewMatrix = null, posMatrix = null, shapeMatrix = null) {
+        super(size, texture, viewMatrix, posMatrix, shapeMatrix);
 
         let cylinderVertices = [];
-        let cylinderColors   = [];
         let cylinderIndices  = [];
+
+        let cylinderTexCoords  = [[1.0, 1.0], [0.0, 1.0], [0.0, 0.0], [1.0, 0.0]];
+        let cylinderTexIndices = [];
 
         let radiusX = this.size[0] / 2;
         let radiusZ = this.size[2] / 2;
@@ -207,11 +201,9 @@ class Cylinder extends Shape {
 
             // Top rim
             cylinderVertices.push([radiusX * cosTheta, -height / 2, radiusZ * sinTheta]);
-            cylinderColors.push(Array.isArray(this.color) ? this.color : [1.0, 0.5, 0.5]);
 
             // Bottom rim
             cylinderVertices.push([radiusX * cosTheta, height / 2, radiusZ * sinTheta]);
-            cylinderColors.push(Array.isArray(this.color) ? this.color : [1.0, 0.5, 0.5]);
         }
 
         // Generate indices
@@ -241,8 +233,15 @@ class Cylinder extends Shape {
             cylinderIndices.push(topNext);
             cylinderIndices.push(bottomCurrent);
             cylinderIndices.push(bottomNext);
+
+            // Texture coordinates
+            cylinderTexIndices.push(0, 1, 2, 0, 2, 3, 0, 1, 2, 0, 2, 3);
         }
 
-        this.setVerticesByIndices(cylinderVertices, cylinderColors, cylinderIndices);
+        let normals   = computeNormalArray(cylinderVertices, cylinderIndices);
+        let positions = convertVertexArray(cylinderVertices, cylinderIndices);
+        let texcoords = convertVertexArray(cylinderTexCoords, cylinderTexIndices);
+
+        this.setVertices(normals, positions, texcoords);
     }
 }
