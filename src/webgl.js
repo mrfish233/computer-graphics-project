@@ -11,6 +11,14 @@ class WebGL {
         this.program = null;
         this.shadow  = null;
 
+        this.depthBuffer = null;
+
+        this.shadowTexture = null;
+        this.shadowFrameBuffer = null;
+
+        this.offScreenWidth  = 2048;
+        this.offScreenHeight = 2048;
+
         this.environment = null;
         this.perspective = null;
         this.view = null;
@@ -33,10 +41,11 @@ class WebGL {
             return;
         }
 
+        // initialize depth buffer
+        this.#initDepthBuffer();
+
         // initialize framebuffer for shadow mapping
-        this.offScreenWidth  = 1024;
-        this.offScreenHeight = 1024;
-        this.#initFrameBuffer();
+        this.#initShadowFrameBuffer();
 
         // Use the compiled program
         this.gl.useProgram(this.program);
@@ -292,20 +301,29 @@ class WebGL {
         return buffer;
     }
 
-    #initFrameBuffer() {
-        let texture = this.gl.createTexture();
-        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.offScreenWidth, this.offScreenHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
-        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-
+    #initDepthBuffer() {
         let depthBuffer = this.gl.createRenderbuffer();
         this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, depthBuffer);
         this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16, this.offScreenWidth, this.offScreenHeight);
 
+        if (!depthBuffer) {
+            console.log("Failed to create depth buffer");
+            return null;
+        }
+
+        this.depthBuffer = depthBuffer;
+    }
+
+    #initShadowFrameBuffer() {
+        let texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.offScreenWidth, this.offScreenHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+
         let frameBuffer = this.gl.createFramebuffer();
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer);
         this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, texture, 0);
-        this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, depthBuffer);
+        this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, this.depthBuffer);
 
         if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) !== this.gl.FRAMEBUFFER_COMPLETE) {
             console.log("Error creating framebuffer: " + this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER));
@@ -314,7 +332,6 @@ class WebGL {
         }
 
         this.shadowTexture = texture;
-        this.shadowDepthBuffer = depthBuffer;
         this.shadowFrameBuffer = frameBuffer;
     }
 
