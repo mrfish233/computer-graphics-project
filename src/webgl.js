@@ -9,6 +9,7 @@ class WebGL {
 
         this.gl = this.canvas.getContext("webgl2");
         this.program = null;
+        this.shadow  = null;
 
         this.environment = null;
         this.perspective = null;
@@ -23,29 +24,21 @@ class WebGL {
     }
 
     async init() {
-        // load shaders
-        const vertexShaderSource   = await this.#loadShader('src/shader/vertex.glsl');
-        const fragmentShaderSource = await this.#loadShader('src/shader/fragment.glsl');
+        // compile shaders
+        this.program = await this.#compileShader('src/shader/vertex.glsl', 'src/shader/fragment.glsl');
+        this.shadow  = await this.#compileShader('src/shader/vertex-shadow.glsl', 'src/shader/fragment-shadow.glsl');
 
-        const vertexShader   = this.#initShader(this.gl.VERTEX_SHADER, vertexShaderSource);
-        const fragmentShader = this.#initShader(this.gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-        if (!vertexShader || !fragmentShader) {
-            console.log("Error creating shaders");
-            return null;
+        if (!this.program || !this.shadow) {
+            console.log("Failed to compile shaders");
+            return;
         }
 
-        // create program
-        this.program = this.gl.createProgram();
-        this.gl.attachShader(this.program, vertexShader);
-        this.gl.attachShader(this.program, fragmentShader);
-        this.gl.linkProgram(this.program);
+        // initialize framebuffer for shadow mapping
+        this.offScreenWidth  = 1024;
+        this.offScreenHeight = 1024;
+        this.#initFrameBuffer();
 
-        if (!this.gl.getProgramParameter(this.program, this.gl.LINK_STATUS)) {
-            console.log("Error linking program: " + this.gl.getProgramInfoLog(this.program));
-            this.gl.deleteProgram(this.program);
-        }
-
+        // Use the compiled program
         this.gl.useProgram(this.program);
     }
 
@@ -147,20 +140,55 @@ class WebGL {
             return;
         }
 
+        // shadow mapping
+        this.gl.useProgram(this.shadow);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.shadowFrameBuffer);
+        this.gl.viewport(0, 0, this.offScreenWidth, this.offScreenHeight);
+        this.clear();
+
         for (let i = 0; i < this.shapes.length; i++) {
-            this.#drawOne(this.shapes[i]);
+            this.#drawShadow(this.shapes[i]);
+        }
+
+        // object rendering
+        this.gl.useProgram(this.program);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        this.clear();
+
+        for (let i = 0; i < this.shapes.length; i++) {
+            this.#drawShape(this.shapes[i]);
         }
     }
 
-    #drawOne(shape) {
+    #drawShadow(shape) {
+        let modelMatrix = new Matrix4();
+        let mvpMatrix   = new Matrix4();
+
+        modelMatrix.setIdentity();
+        modelMatrix.multiply(shape.modelViewMatrix);
+        modelMatrix.multiply(shape.modelPosMatrix);
+        modelMatrix.multiply(shape.modelShapeMatrix);
+
+        let lightPosition = this.environment.lightPosition;
+
+        mvpMatrix.setPerspective(100, this.offScreenWidth/this.offScreenHeight, this.perspective.near, this.perspective.far);
+        mvpMatrix.lookAt(lightPosition[0], lightPosition[1], lightPosition[2], 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        mvpMatrix.multiply(modelMatrix);
+
+        shape.lightMvpMatrix = new Matrix4(mvpMatrix);
+
         // bind vertices
-        this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);
-        this.#bindAttribute(this.program, 'a_position', 3, shape.positionBuffer);
-        this.#bindAttribute(this.program, 'a_texcoord', 2, shape.texcoordBuffer);
+        this.#bindAttribute(this.shadow, 'a_position', 3, shape.positionBuffer);
 
-        // bind texture
-        this.#bindTexture(shape.texture);
+        // bind matrices
+        this.#bindUniformMatrix4(this.shadow, 'u_mvp_matrix', mvpMatrix.elements);
 
+        // draw the shape
+        this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
+    }
+
+    #drawShape(shape) {
         // set up the mvp matrix and normal matrix
         let modelMatrix  = new Matrix4();
         let mvpMatrix    = new Matrix4();
@@ -180,10 +208,19 @@ class WebGL {
         normalMatrix.setInverseOf(modelMatrix);
         normalMatrix.transpose();
 
+        // bind vertices
+        this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);
+        this.#bindAttribute(this.program, 'a_position', 3, shape.positionBuffer);
+        this.#bindAttribute(this.program, 'a_texcoord', 2, shape.texcoordBuffer);
+
         // bind matrices
         this.#bindUniformMatrix4(this.program, 'u_model_matrix',  modelMatrix.elements);
         this.#bindUniformMatrix4(this.program, 'u_mvp_matrix',    mvpMatrix.elements);
         this.#bindUniformMatrix4(this.program, 'u_normal_matrix', normalMatrix.elements);
+        this.#bindUniformMatrix4(this.program, 'u_light_mvp_matrix', shape.lightMvpMatrix.elements);
+
+        // bind texture
+        this.#bindTexture(shape.texture);
 
         // draw the shape
         this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
@@ -194,6 +231,31 @@ class WebGL {
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.gl.enable(this.gl.DEPTH_TEST);
+    }
+
+    async #compileShader(vShader, fShader) {
+        let vertexShaderSource   = await this.#loadShader(vShader);
+        let fragmentShaderSource = await this.#loadShader(fShader);
+
+        const vertexShader   = this.#initShader(this.gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = this.#initShader(this.gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+        if (!vertexShader || !fragmentShader) {
+            console.log("Error creating shaders");
+            return null;
+        }
+
+        let program = this.gl.createProgram();
+        this.gl.attachShader(program, vertexShader);
+        this.gl.attachShader(program, fragmentShader);
+        this.gl.linkProgram(program);
+
+        if (!this.gl.getProgramParameter(program, this.gl.LINK_STATUS)) {
+            console.log("Error linking program: " + this.gl.getProgramInfoLog(program));
+            this.gl.deleteProgram(program);
+        }
+
+        return program;
     }
 
     async #loadShader(url) {
@@ -230,12 +292,44 @@ class WebGL {
         return buffer;
     }
 
+    #initFrameBuffer() {
+        let texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.offScreenWidth, this.offScreenHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+
+        let depthBuffer = this.gl.createRenderbuffer();
+        this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, depthBuffer);
+        this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16, this.offScreenWidth, this.offScreenHeight);
+
+        let frameBuffer = this.gl.createFramebuffer();
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer);
+        this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, texture, 0);
+        this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, depthBuffer);
+
+        if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) !== this.gl.FRAMEBUFFER_COMPLETE) {
+            console.log("Error creating framebuffer: " + this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER));
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            return null;
+        }
+
+        this.shadowTexture = texture;
+        this.shadowDepthBuffer = depthBuffer;
+        this.shadowFrameBuffer = frameBuffer;
+    }
+
     #clearBuffer() {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     }
 
     #bindTexture(texture) {
+        // bind shadow texture
+        this.#bindUniformInt(this.program, 'u_shadow_map', 0);
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.shadowTexture);
+
+        // bind texture
         this.#bindUniformInt(this.program, 'u_texture', 1);
         this.gl.activeTexture(this.gl.TEXTURE1);
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[texture]);

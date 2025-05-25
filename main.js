@@ -135,7 +135,6 @@ function draw() {
         return;
     }
 
-    webgl.clear();
     webgl.setEnvironment(lightPosition, cameraPosition, lightCoefficient);
     webgl.setPerspectiveView(perspective, view);
 

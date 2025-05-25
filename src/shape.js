@@ -14,12 +14,10 @@ class Shape {
         this.numOfVertices = 0;
 
         // Initialize matrices for WebGL
-        let identityMatrix = new Matrix4();
-        identityMatrix.setIdentity();
-
-        this.modelViewMatrix  = new Matrix4(modelViewMatrix  || identityMatrix);
-        this.modelPosMatrix   = new Matrix4(modelPosMatrix   || identityMatrix);
-        this.modelShapeMatrix = new Matrix4(modelShapeMatrix || identityMatrix);
+        this.modelViewMatrix  = new Matrix4(modelViewMatrix);
+        this.modelPosMatrix   = new Matrix4(modelPosMatrix);
+        this.modelShapeMatrix = new Matrix4(modelShapeMatrix);
+        this.lightMvpMatrix   = null;
     }
 
     setBuffers(normalBuffer, positionBuffer, texcoordBuffer) {
