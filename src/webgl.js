@@ -57,12 +57,12 @@ class WebGL {
         };
 
         // bind environment variables
-        this.#bindUniformFloat('u_light_position', lightPosition);
-        this.#bindUniformFloat('u_view_position',  cameraPosition);
-        this.#bindUniformFloat('u_ambient_light',  lightCoefficient.ambient);
-        this.#bindUniformFloat('u_diffuse_light',  lightCoefficient.diffuse);
-        this.#bindUniformFloat('u_specular_light', lightCoefficient.specular);
-        this.#bindUniformFloat('u_shininess',      lightCoefficient.shininess);
+        this.#bindUniformFloat(this.program, 'u_light_position', lightPosition);
+        this.#bindUniformFloat(this.program, 'u_view_position',  cameraPosition);
+        this.#bindUniformFloat(this.program, 'u_ambient_light',  lightCoefficient.ambient);
+        this.#bindUniformFloat(this.program, 'u_diffuse_light',  lightCoefficient.diffuse);
+        this.#bindUniformFloat(this.program, 'u_specular_light', lightCoefficient.specular);
+        this.#bindUniformFloat(this.program, 'u_shininess',      lightCoefficient.shininess);
     }
 
     setPerspectiveView(perspective, view) {
@@ -154,9 +154,9 @@ class WebGL {
 
     #drawOne(shape) {
         // bind vertices
-        this.#bindAttribute('a_normal',   3, shape.normalBuffer);
-        this.#bindAttribute('a_position', 3, shape.positionBuffer);
-        this.#bindAttribute('a_texcoord', 2, shape.texcoordBuffer);
+        this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);
+        this.#bindAttribute(this.program, 'a_position', 3, shape.positionBuffer);
+        this.#bindAttribute(this.program, 'a_texcoord', 2, shape.texcoordBuffer);
 
         // bind texture
         this.#bindTexture(shape.texture);
@@ -181,9 +181,9 @@ class WebGL {
         normalMatrix.transpose();
 
         // bind matrices
-        this.#bindUniformMatrix4('u_model_matrix',  modelMatrix.elements);
-        this.#bindUniformMatrix4('u_mvp_matrix',    mvpMatrix.elements);
-        this.#bindUniformMatrix4('u_normal_matrix', normalMatrix.elements);
+        this.#bindUniformMatrix4(this.program, 'u_model_matrix',  modelMatrix.elements);
+        this.#bindUniformMatrix4(this.program, 'u_mvp_matrix',    mvpMatrix.elements);
+        this.#bindUniformMatrix4(this.program, 'u_normal_matrix', normalMatrix.elements);
 
         // draw the shape
         this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
@@ -235,22 +235,22 @@ class WebGL {
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     }
 
-    #bindAttribute(name, size, buffer) {
-        let location = this.gl.getAttribLocation(this.program, name);
+    #bindTexture(texture) {
+        this.#bindUniformInt(this.program, 'u_texture', 1);
+        this.gl.activeTexture(this.gl.TEXTURE1);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[texture]);
+    }
+
+    #bindAttribute(program, name, size, buffer) {
+        let location = this.gl.getAttribLocation(program, name);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
         this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(location);
     }
 
-    #bindTexture(texture) {
-        this.gl.activeTexture(this.gl.TEXTURE0);
-        this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[texture]);
-        this.#bindUniformInt('u_texture', 0);
-    }
-
-    #bindUniformFloat(name, data) {
-        let location = this.gl.getUniformLocation(this.program, name);
+    #bindUniformFloat(program, name, data) {
+        let location = this.gl.getUniformLocation(program, name);
 
         if (Array.isArray(data)) {
             if (data.length === 4) {
@@ -271,13 +271,13 @@ class WebGL {
         }
     }
 
-    #bindUniformInt(name, data) {
-        let location = this.gl.getUniformLocation(this.program, name);
+    #bindUniformInt(program, name, data) {
+        let location = this.gl.getUniformLocation(program, name);
         this.gl.uniform1i(location, data);
     }
 
-    #bindUniformMatrix4(name, data) {
-        let location = this.gl.getUniformLocation(this.program, name);
+    #bindUniformMatrix4(program, name, data) {
+        let location = this.gl.getUniformLocation(program, name);
         this.gl.uniformMatrix4fv(location, false, data);
     }
 }
