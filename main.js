@@ -114,9 +114,6 @@ function initTextures() {
 }
 
 async function initShapes() {
-    let modelViewMatrix = new Matrix4();
-    modelViewMatrix.rotate(angleX, 0, 1, 0);
-
     cube1 = new Cube([1.0, 1.0, 3.0], textures['white'].name);
     cube2 = new Cube([3.0, 1.0, 1.0], textures['white'].name);
     cube3 = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
@@ -135,6 +132,10 @@ function draw() {
         return;
     }
 
+    let modelViewMatrix = new Matrix4();
+    modelViewMatrix.rotate(angleX, 0, 1, 0);
+    modelViewMatrix.rotate(angleY, 1, 0, 0);
+
     webgl.setEnvironment(lightPosition, cameraPosition, lightCoefficient);
     webgl.setPerspectiveView(perspective, view);
 
@@ -145,12 +146,14 @@ function draw() {
     cube1Pos.translate(0, 0, -2);
     cube1Pos.rotate(angleX, 0, 1, 0);
 
+    // cube1.setModelViewMatrix(modelViewMatrix);
     cube1.setModelPosMatrix(cube1Pos);
 
     let cube2Pos = new Matrix4();
     cube2Pos.translate(0, 0, 2);
     cube2Pos.rotate(angleX, 0, 1, 0);
 
+    // cube2.setModelViewMatrix(modelViewMatrix);
     cube2.setModelPosMatrix(cube2Pos);
 
     let soccerPos = new Matrix4();
