@@ -25,8 +25,8 @@ class WebGL {
 
     async init() {
         // compile shaders
-        this.program = await this.#compileShader('src/shader/vertex.glsl', 'src/shader/fragment.glsl');
-        this.shadow  = await this.#compileShader('src/shader/vertex-shadow.glsl', 'src/shader/fragment-shadow.glsl');
+        this.program = await this.#compileShader('src/shader/default-vertex.glsl', 'src/shader/default-fragment.glsl');
+        this.shadow  = await this.#compileShader('src/shader/shadow-vertex.glsl', 'src/shader/shadow-fragment.glsl');
 
         if (!this.program || !this.shadow) {
             console.log("Failed to compile shaders");
