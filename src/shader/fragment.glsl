@@ -9,10 +9,14 @@ uniform float u_specular_light;
 uniform float u_shininess;
 
 uniform sampler2D u_texture;
+uniform sampler2D u_shadow_map;
 
 varying vec3 v_normal;
 varying vec3 v_position;
 varying vec2 v_texcoord;
+varying vec4 v_light_position;
+
+const float de_mach_threshold = 0.005;
 
 void main() {
     // texture color
@@ -44,6 +48,13 @@ void main() {
         specular_light = specular_color * u_specular_light * pow(specular_angle, u_shininess);
     }
 
+    // shadow mapping
+    vec3 shadow_coord = (v_light_position.xyz / v_light_position.w) * 0.5 + 0.5;
+    vec4 rgba_depth   = texture2D(u_shadow_map, shadow_coord.xy);
+
+    float depth = rgba_depth.r;
+    float visibility = (shadow_coord.z - de_mach_threshold < depth) ? 1.0 : 0.3;
+
     // final fragment color
-    gl_FragColor = vec4(ambient_light + diffuse_light + specular_light, 1.0);
+    gl_FragColor = vec4((ambient_light + diffuse_light + specular_light) * visibility, 1.0);
 }
