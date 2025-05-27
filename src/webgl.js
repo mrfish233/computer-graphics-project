@@ -192,7 +192,36 @@ class WebGL {
     }
 
     #drawShape(shape) {
-        // set up the mvp matrix and normal matrix
+        // set up the matrices
+        let matrices = this.#computeMatrices(shape);
+
+        // bind uniforms
+        this.#bindUniformFloat(this.program, 'u_light_position', this.light);
+        this.#bindUniformFloat(this.program, 'u_view_position',  this.camera);
+        this.#bindUniformFloat(this.program, 'u_ambient_light',  this.lightCoeff.ambient);
+        this.#bindUniformFloat(this.program, 'u_diffuse_light',  this.lightCoeff.diffuse);
+        this.#bindUniformFloat(this.program, 'u_specular_light', this.lightCoeff.specular);
+        this.#bindUniformFloat(this.program, 'u_shininess',      this.lightCoeff.shininess);
+
+        // bind vertices
+        this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);
+        this.#bindAttribute(this.program, 'a_position', 3, shape.positionBuffer);
+        this.#bindAttribute(this.program, 'a_texcoord', 2, shape.texcoordBuffer);
+
+        // bind matrices
+        this.#bindUniformMatrix4(this.program, 'u_model_matrix',  matrices.model.elements);
+        this.#bindUniformMatrix4(this.program, 'u_mvp_matrix',    matrices.mvp.elements);
+        this.#bindUniformMatrix4(this.program, 'u_normal_matrix', matrices.normal.elements);
+        this.#bindUniformMatrix4(this.program, 'u_light_mvp_matrix', shape.lightMvpMatrix.elements);
+
+        // bind texture
+        this.#bindTexture(shape.texture);
+
+        // draw the shape
+        this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
+    }
+
+    #computeMatrices(shape) {
         let modelMatrix  = new Matrix4();
         let mvpMatrix    = new Matrix4();
         let normalMatrix = new Matrix4();
@@ -211,30 +240,11 @@ class WebGL {
         normalMatrix.setInverseOf(modelMatrix);
         normalMatrix.transpose();
 
-        // bind uniforms
-        this.#bindUniformFloat(this.program, 'u_light_position', this.light);
-        this.#bindUniformFloat(this.program, 'u_view_position',  this.camera);
-        this.#bindUniformFloat(this.program, 'u_ambient_light',  this.lightCoeff.ambient);
-        this.#bindUniformFloat(this.program, 'u_diffuse_light',  this.lightCoeff.diffuse);
-        this.#bindUniformFloat(this.program, 'u_specular_light', this.lightCoeff.specular);
-        this.#bindUniformFloat(this.program, 'u_shininess',      this.lightCoeff.shininess);
-
-        // bind vertices
-        this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);
-        this.#bindAttribute(this.program, 'a_position', 3, shape.positionBuffer);
-        this.#bindAttribute(this.program, 'a_texcoord', 2, shape.texcoordBuffer);
-
-        // bind matrices
-        this.#bindUniformMatrix4(this.program, 'u_model_matrix',  modelMatrix.elements);
-        this.#bindUniformMatrix4(this.program, 'u_mvp_matrix',    mvpMatrix.elements);
-        this.#bindUniformMatrix4(this.program, 'u_normal_matrix', normalMatrix.elements);
-        this.#bindUniformMatrix4(this.program, 'u_light_mvp_matrix', shape.lightMvpMatrix.elements);
-
-        // bind texture
-        this.#bindTexture(shape.texture);
-
-        // draw the shape
-        this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
+        return {
+            model:  modelMatrix,
+            mvp:    mvpMatrix,
+            normal: normalMatrix
+        }
     }
 
     clear() {
