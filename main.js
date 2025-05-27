@@ -136,7 +136,8 @@ function draw() {
     modelViewMatrix.rotate(angleX, 0, 1, 0);
     modelViewMatrix.rotate(angleY, 1, 0, 0);
 
-    webgl.setEnvironment(lightPosition, cameraPosition, lightCoefficient);
+    webgl.setLight(lightPosition, lightCoefficient);
+    webgl.setCamera(cameraPosition);
     webgl.setPerspectiveView(perspective, view);
 
     angleX = reangle(angleX);

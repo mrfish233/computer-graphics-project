@@ -19,7 +19,10 @@ class WebGL {
         this.offScreenWidth  = 2048;
         this.offScreenHeight = 2048;
 
-        this.environment = null;
+        this.camera     = null;
+        this.light      = null;
+        this.lightCoeff = null;
+
         this.perspective = null;
         this.view = null;
 
@@ -51,20 +54,13 @@ class WebGL {
         this.gl.useProgram(this.program);
     }
 
-    setEnvironment(lightPosition, cameraPosition, lightCoefficient) {
-        this.environment = {
-            lightPosition:    lightPosition,
-            cameraPosition:   cameraPosition,
-            lightCoefficient: lightCoefficient
-        };
+    setLight(light, lightCoefficient) {
+        this.light = light;
+        this.lightCoeff = lightCoefficient;
+    }
 
-        // bind environment variables
-        this.#bindUniformFloat(this.program, 'u_light_position', lightPosition);
-        this.#bindUniformFloat(this.program, 'u_view_position',  cameraPosition);
-        this.#bindUniformFloat(this.program, 'u_ambient_light',  lightCoefficient.ambient);
-        this.#bindUniformFloat(this.program, 'u_diffuse_light',  lightCoefficient.diffuse);
-        this.#bindUniformFloat(this.program, 'u_specular_light', lightCoefficient.specular);
-        this.#bindUniformFloat(this.program, 'u_shininess',      lightCoefficient.shininess);
+    setCamera(cameraPosition) {
+        this.camera = cameraPosition;
     }
 
     setPerspectiveView(perspective, view) {
@@ -140,7 +136,7 @@ class WebGL {
             console.log("No shapes to draw\n");
             return;
         }
-        else if (this.environment === null) {
+        else if (this.light === null || this.camera === null || this.lightCoeff === null) {
             console.log("Environment not set\n");
             return;
         }
@@ -179,10 +175,8 @@ class WebGL {
         modelMatrix.multiply(shape.modelPosMatrix);
         modelMatrix.multiply(shape.modelShapeMatrix);
 
-        let lightPosition = this.environment.lightPosition;
-
         mvpMatrix.setPerspective(100, this.offScreenWidth/this.offScreenHeight, this.perspective.near, this.perspective.far);
-        mvpMatrix.lookAt(lightPosition[0], lightPosition[1], lightPosition[2], 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        mvpMatrix.lookAt(this.light[0], this.light[1], this.light[2], 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         mvpMatrix.multiply(modelMatrix);
 
         shape.lightMvpMatrix = new Matrix4(mvpMatrix);
@@ -216,6 +210,14 @@ class WebGL {
 
         normalMatrix.setInverseOf(modelMatrix);
         normalMatrix.transpose();
+
+        // bind uniforms
+        this.#bindUniformFloat(this.program, 'u_light_position', this.light);
+        this.#bindUniformFloat(this.program, 'u_view_position',  this.camera);
+        this.#bindUniformFloat(this.program, 'u_ambient_light',  this.lightCoeff.ambient);
+        this.#bindUniformFloat(this.program, 'u_diffuse_light',  this.lightCoeff.diffuse);
+        this.#bindUniformFloat(this.program, 'u_specular_light', this.lightCoeff.specular);
+        this.#bindUniformFloat(this.program, 'u_shininess',      this.lightCoeff.shininess);
 
         // bind vertices
         this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);
