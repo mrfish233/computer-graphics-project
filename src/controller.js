@@ -79,3 +79,11 @@ function mouseController(canvas, mouse) {
         };
     });
 }
+
+document.querySelectorAll('input[type="range"]').forEach((input) => { 
+    input.draggable = true;
+    input.addEventListener('dragstart', (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    });
+});
