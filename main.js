@@ -69,16 +69,16 @@ let textures = {
 // light and camera variables
 
 let lightPosition    = [1.0, 3.0, 3.0];
-let cameraPosition   = [2.0, 2.0, 2.0];
+let cameraPosition   = [4.0, 4.0, 4.0];
 let lightCoefficient = {
     ambient: 0.3, diffuse: 1.2, specular: 0.9, shininess: 30
 };
 
 let perspective = {
-    fov: 70, aspect: 1, near: 1, far: 100
+    fov: 90, aspect: 1, near: 1, far: 100
 };
 let view = {
-    eye: [4.0, 4.0, 4.0],
+    eye: cameraPosition,
     at:  [0.0, 0.0, 0.0],
     up:  [0.0, 1.0, 0.0]
 };
@@ -89,6 +89,7 @@ let cube1 = null;
 let cube2 = null;
 let cube3 = null;
 let soccer = null;
+let mirror = null;
 
 async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
@@ -114,16 +115,21 @@ function initTextures() {
 }
 
 async function initShapes() {
-    cube1 = new Cube([1.0, 1.0, 3.0], textures['white'].name);
+    cube1 = new Cube([1.0, 1.0, 3.0], textures['blue'].name);
     cube2 = new Cube([3.0, 1.0, 1.0], textures['white'].name);
     cube3 = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
     soccer = new Model('assets/soccer/soccer.obj', [textures['soccer'].name]);
     await soccer.init();
 
+    mirror = new Cube([0.1, 8, 8], textures['white'].name);
+    // mirror = new Cube([8, 8, 0.1], textures['white'].name);
+
     webgl.addShape(cube1);
     webgl.addShape(cube2);
     webgl.addShape(cube3);
     webgl.addModel(soccer);
+    // webgl.addShape(mirror, [0, 0, 1]);
+    webgl.addShape(mirror, [1, 0, 0]);
 }
 
 function draw() {
@@ -133,8 +139,9 @@ function draw() {
     }
 
     let modelViewMatrix = new Matrix4();
-    modelViewMatrix.rotate(angleX, 0, 1, 0);
-    modelViewMatrix.rotate(angleY, 1, 0, 0);
+    modelViewMatrix.translate(2, 0, 0);
+    // modelViewMatrix.rotate(angleX, 0, 1, 0);
+    // modelViewMatrix.rotate(angleY, 1, 0, 0);
 
     webgl.setLight(lightPosition, lightCoefficient);
     webgl.setCamera(cameraPosition);
@@ -147,23 +154,27 @@ function draw() {
     cube1Pos.translate(0, 0, -2);
     cube1Pos.rotate(angleX, 0, 1, 0);
 
-    // cube1.setModelViewMatrix(modelViewMatrix);
-    cube1.setModelPosMatrix(cube1Pos);
+    cube1.setModelMatrices(modelViewMatrix, cube1Pos, null);
 
     let cube2Pos = new Matrix4();
     cube2Pos.translate(0, 0, 2);
     cube2Pos.rotate(angleX, 0, 1, 0);
 
-    // cube2.setModelViewMatrix(modelViewMatrix);
-    cube2.setModelPosMatrix(cube2Pos);
+    cube2.setModelMatrices(modelViewMatrix, cube2Pos, null);
+
+    cube3.setModelMatrices(modelViewMatrix, null, null);
 
     let soccerPos = new Matrix4();
     soccerPos.translate(0, 0.86, 0);
+    soccerPos.scale(3.0, 3.0, 3.0);
 
-    let soccerShape = new Matrix4();
-    soccerShape.scale(3.0, 3.0, 3.0);
+    soccer.setModelMatrices(modelViewMatrix, soccerPos, null);
 
-    soccer.setModelMatrices(null, soccerPos, soccerShape);
+    let mirrorZ   = parseFloat(document.getElementById('mirrorZ').value) / 100.0;
+    let mirrorPos = new Matrix4();
+    mirrorPos.translate(-0.1, 0, mirrorZ);
+
+    mirror.setModelPosMatrix(mirrorPos);
 
     webgl.draw();
 
