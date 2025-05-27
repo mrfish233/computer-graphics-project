@@ -27,8 +27,6 @@ class Model {
             return;
         }
 
-        console.log(object);
-
         for (let i = 0; i < object.geometries.length; i++) {
             const data = object.geometries[i].data;
             const tex  = this.textures[i];
