@@ -10,6 +10,7 @@ class WebGL {
         this.gl = this.canvas.getContext("webgl2");
         this.program = null;
         this.shadow  = null;
+        this.reflect = null;
 
         this.depthBuffer = null;
 
@@ -38,6 +39,7 @@ class WebGL {
         // compile shaders
         this.program = await this.#compileShader('src/shader/default-vertex.glsl', 'src/shader/default-fragment.glsl');
         this.shadow  = await this.#compileShader('src/shader/shadow-vertex.glsl', 'src/shader/shadow-fragment.glsl');
+        this.reflect = await this.#compileShader('src/shader/reflect-vertex.glsl', 'src/shader/reflect-fragment.glsl');
 
         if (!this.program || !this.shadow) {
             console.log("Failed to compile shaders");
@@ -49,6 +51,9 @@ class WebGL {
 
         // initialize framebuffer for shadow mapping
         this.#initShadowFrameBuffer();
+
+        // initialize framebuffer for reflections
+        this.#initReflectFrameBuffer();
 
         // Use the compiled program
         this.gl.useProgram(this.program);
@@ -347,6 +352,37 @@ class WebGL {
 
         this.shadowTexture = texture;
         this.shadowFrameBuffer = frameBuffer;
+    }
+
+    #initReflectFrameBuffer() {
+        // use cubemap to render reflections
+        let texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, texture);
+
+        const faces = [
+            this.gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+            this.gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+            this.gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+            this.gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            this.gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+            this.gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
+        ];
+
+        for (let i = 0; i < faces.length; i++) {
+            this.gl.texImage2D(faces[i], 0, this.gl.RGBA, this.offScreenWidth, this.offScreenHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+        }
+
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+
+        // let frameBuffer = this.gl.createFramebuffer();
+
+        this.reflectTexture = texture;
+        this.reflectFrameBuffer = this.gl.createFramebuffer();
+
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
     }
 
     #clearBuffer() {
