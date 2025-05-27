@@ -146,20 +146,16 @@ class WebGL {
         }
 
         // shadow mapping
-        this.gl.useProgram(this.shadow);
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.shadowFrameBuffer);
-        this.gl.viewport(0, 0, this.offScreenWidth, this.offScreenHeight);
-        this.clear();
+        this.#setCurrentProgram(this.shadow, this.shadowFrameBuffer, this.offScreenWidth, this.offScreenHeight);
+        this.#clear();
 
         for (let i = 0; i < this.shapes.length; i++) {
             this.#drawShadow(this.shapes[i]);
         }
 
         // object rendering
-        this.gl.useProgram(this.program);
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-        this.clear();
+        this.#setCurrentProgram(this.program, null, this.canvas.width, this.canvas.height);
+        this.#clear();
 
         for (let i = 0; i < this.shapes.length; i++) {
             this.#drawShape(this.shapes[i]);
@@ -247,7 +243,13 @@ class WebGL {
         }
     }
 
-    clear() {
+    #setCurrentProgram(program, frameBuffer, width, height) {
+        this.gl.useProgram(program);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer);
+        this.gl.viewport(0, 0, width, height);
+    }
+
+    #clear() {
         // clear canvas
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
