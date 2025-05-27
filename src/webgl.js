@@ -29,6 +29,7 @@ class WebGL {
 
         this.shapes   = [];
         this.refShape = null;
+        this.refDir   = null;
         this.textures = {};
 
         if (!this.gl) {
@@ -88,7 +89,7 @@ class WebGL {
         this.textures[name] = tex;
     }
 
-    addShape(shape, isReflectShape = false) {
+    addShape(shape, reflectDir = null) {
         if (!(shape instanceof Shape)) {
             console.log("Bad shape\n");
             return;
@@ -119,8 +120,9 @@ class WebGL {
         shape.setBuffers(normalBuffer, positionBuffer, texcoordBuffer);
         this.#clearBuffer();
 
-        if (isReflectShape) {
+        if (reflectDir) {
             this.refShape = shape;
+            this.refDir   = reflectDir;
         }
         else {
             this.shapes.push(shape);
@@ -175,7 +177,10 @@ class WebGL {
         // reflection rendering
         this.gl.useProgram(this.reflect);
         this.#drawReflectShape();
-    }
+  
+        // draw cube map for reflections
+        this.#drawReflectCubeMap();
+  }
 
     #drawShadow(shape) {
         let modelMatrix = new Matrix4();
@@ -230,6 +235,71 @@ class WebGL {
 
         // draw the shape
         this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
+    }
+
+    #drawReflectCubeMap() {
+        if (this.refShape === null) {
+            return;
+        }
+
+        const envCubeLookAt = [
+            [1.0, 0.0, 0.0], [-1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0], [0.0, -1.0, 0.0],
+            [0.0, 0.0, 1.0], [0.0, 0.0, -1.0]
+        ];
+
+        const envCubeUp = [
+            [0.0, -1.0, 0.0], [0.0, -1.0, 0.0],
+            [0.0,  0.0, 1.0], [0.0, 0.0, -1.0],
+            [0.0, -1.0, 0.0], [0.0, -1.0, 0.0]
+        ];
+
+        const pos = this.refShape.getPos();
+        let x, y, z;
+
+        if (this.refDir[0]) {
+            x = (2 * pos[0] - this.camera[0]);
+            y = this.camera[1];
+            z = this.camera[2];
+        }
+        else if (this.refDir[1]) {
+            x = this.camera[0];
+            y = (2 * pos[1] - this.camera[1]);
+            z = this.camera[2];
+        }
+        else if (this.refDir[2]) {
+            x = this.camera[0];
+            y = this.camera[1];
+            z = (2 * pos[2] - this.camera[2]);
+        }
+
+        let originalPerspective = Object.assign({}, this.perspective);
+        let originalView = Object.assign({}, this.view);
+
+        for (let i = 0; i < 6; i++) {
+            this.#setCurrentProgram(this.program, this.reflectFrameBuffer, this.offScreenWidth, this.offScreenHeight);
+            this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, this.reflectTexture, 0);
+            this.#clear();
+
+            this.view = {
+                eye: [x, y, z],
+                at: [
+                    x + envCubeLookAt[i][0],
+                    y + envCubeLookAt[i][1],
+                    z + envCubeLookAt[i][2]
+                ],
+                up: envCubeUp[i]
+            };
+
+            for (let j = 0; j < this.shapes.length; j++) {
+                this.#drawShape(this.shapes[j]);
+            }
+        }
+
+        this.perspective = Object.assign({}, originalPerspective);
+        this.view = Object.assign({}, originalView);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     }
 
     #drawReflectShape() {
@@ -377,6 +447,9 @@ class WebGL {
         let texture = this.gl.createTexture();
         this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.offScreenWidth, this.offScreenHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
 
         let frameBuffer = this.gl.createFramebuffer();
@@ -417,12 +490,15 @@ class WebGL {
         this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
         this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
 
-        // let frameBuffer = this.gl.createFramebuffer();
+        let frameBuffer = this.gl.createFramebuffer();
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, frameBuffer);
+        this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, this.depthBuffer);
 
         this.reflectTexture = texture;
-        this.reflectFrameBuffer = this.gl.createFramebuffer();
+        this.reflectFrameBuffer = frameBuffer;
 
         this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     }
 
     #clearBuffer() {
