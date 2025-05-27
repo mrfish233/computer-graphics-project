@@ -192,12 +192,12 @@ class WebGL {
         let matrices = this.#computeMatrices(shape);
 
         // bind uniforms
-        this.#bindUniformFloat(this.program, 'u_light_position', this.light);
-        this.#bindUniformFloat(this.program, 'u_view_position',  this.camera);
-        this.#bindUniformFloat(this.program, 'u_ambient_light',  this.lightCoeff.ambient);
-        this.#bindUniformFloat(this.program, 'u_diffuse_light',  this.lightCoeff.diffuse);
-        this.#bindUniformFloat(this.program, 'u_specular_light', this.lightCoeff.specular);
-        this.#bindUniformFloat(this.program, 'u_shininess',      this.lightCoeff.shininess);
+        this.#bindUniformFloat(this.program, 'u_light_position',  this.light);
+        this.#bindUniformFloat(this.program, 'u_camera_position', this.camera);
+        this.#bindUniformFloat(this.program, 'u_ambient_light',   this.lightCoeff.ambient);
+        this.#bindUniformFloat(this.program, 'u_diffuse_light',   this.lightCoeff.diffuse);
+        this.#bindUniformFloat(this.program, 'u_specular_light',  this.lightCoeff.specular);
+        this.#bindUniformFloat(this.program, 'u_shininess',       this.lightCoeff.shininess);
 
         // bind vertices
         this.#bindAttribute(this.program, 'a_normal',   3, shape.normalBuffer);

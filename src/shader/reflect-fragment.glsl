@@ -1,6 +1,6 @@
 precision mediump float;
 
-uniform vec3 u_view_position;
+uniform vec3 u_camera_position;
 uniform vec3 u_color;
 
 uniform samplerCube u_environment_map;
@@ -13,8 +13,8 @@ void main() {
     vec3 normal = normalize(v_normal);
 
     // directions
-    vec3 view_dir = normalize(u_view_position - v_position);
-    vec3 reflect_dir = reflect(-view_dir, normal);
+    vec3 camera_dir  = normalize(u_camera_position - v_position);
+    vec3 reflect_dir = reflect(-camera_dir, normal);
 
     // sample the environment map
     vec3 reflect_color = textureCube(u_environment_map, reflect_dir).rgb;

@@ -1,7 +1,7 @@
 precision mediump float;
 
 uniform vec3 u_light_position;
-uniform vec3 u_view_position;
+uniform vec3 u_camera_position;
 
 uniform float u_ambient_light;
 uniform float u_diffuse_light;
@@ -32,7 +32,7 @@ void main() {
 
     // directions
     vec3 light_dir   = normalize(u_light_position - v_position);
-    vec3 view_dir    = normalize(u_view_position - v_position);
+    vec3 camera_dir  = normalize(u_camera_position - v_position);
     vec3 reflect_dir = reflect(-light_dir, normal);
 
     // dot product of normal and light direction
@@ -44,7 +44,7 @@ void main() {
     vec3 specular_light = vec3(0.0, 0.0, 0.0);
 
     if (normal_dot_light > 0.0) {
-        float specular_angle = clamp(dot(reflect_dir, view_dir), 0.0, 1.0);
+        float specular_angle = clamp(dot(reflect_dir, camera_dir), 0.0, 1.0);
         specular_light = specular_color * u_specular_light * pow(specular_angle, u_shininess);
     }
 
