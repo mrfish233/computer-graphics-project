@@ -18,6 +18,8 @@ class WebGL {
         this.shadowTexture = null;
         this.shadowFrameBuffer = null;
 
+        this.environmentTexture = null;
+
         this.offScreenWidth  = 2048;
         this.offScreenHeight = 2048;
 
@@ -29,6 +31,7 @@ class WebGL {
         this.view = null;
 
         this.shapes   = [];
+        this.envShape = null;
         this.refShape = null;
         this.refDir   = null;
         this.textures = {};
@@ -89,6 +92,15 @@ class WebGL {
 
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
         this.textures[name] = tex;
+    }
+
+    addEnvironmentCube(shape, images, width, height) {
+        this.#initCubeMap(images, width, height);
+
+        let positionBuffer = this.#initBuffer(shape.positions);
+        shape.setBuffers(null, positionBuffer, null);
+
+        this.envShape = shape;
     }
 
     addShape(shape, reflectDir = null) {
@@ -182,7 +194,47 @@ class WebGL {
   
         // draw cube map for reflections
         this.#drawReflectCubeMap();
-  }
+
+        // environment cube rendering
+        if (this.envShape !== null) {
+            this.#setCurrentProgram(this.envcube, null, this.canvas.width, this.canvas.height);
+            this.#drawEnvironmentCube();
+        }
+    }
+
+    #drawEnvironmentCube() {
+        if (this.envShape === null) {
+            return;
+        }
+
+        let perspectiveMatrix = new Matrix4();
+        let viewMatrix = new Matrix4();
+
+        perspectiveMatrix.setPerspective(this.perspective.fov, this.perspective.aspect, this.perspective.near, this.perspective.far);
+        viewMatrix.lookAt(this.view.eye[0], -this.view.eye[1], this.view.eye[2],
+                         this.view.at[0],  this.view.at[1],  this.view.at[2],
+                         this.view.up[0],  -this.view.up[1],  this.view.up[2]);
+        viewMatrix.elements[12] = 0.0;
+        viewMatrix.elements[13] = 0.0;
+        viewMatrix.elements[14] = 0.0;
+
+        perspectiveMatrix.multiply(viewMatrix);
+
+        this.gl.depthFunc(this.gl.LEQUAL);
+
+        // bind vertices
+        this.#bindAttribute(this.envcube, 'a_position', 3, this.envShape.positionBuffer);
+
+        // bind matrices
+        let inverse = perspectiveMatrix.invert();
+        this.#bindUniformMatrix4(this.envcube, 'u_view_dir_inverse', inverse.elements);
+
+        // bind texture
+        this.#bindCubeMapTexture();
+
+        // draw the environment cube
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, this.envShape.numOfVertices);
+    }
 
     #drawShadow(shape) {
         let modelMatrix = new Matrix4();
@@ -503,14 +555,58 @@ class WebGL {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     }
 
+    #initCubeMap(images, width, height) {
+        let texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, texture);
+
+        const faces = [
+            this.gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+            this.gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+            this.gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+            this.gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            this.gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+            this.gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
+        ];
+
+        for (let i = 0; i < faces.length; i++) {
+            this.gl.texImage2D(faces[i], 0, this.gl.RGBA, width, height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+
+            let image = new Image();
+            image.src = images[i];
+            image.onload = () => {
+                this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, texture);
+                this.gl.texImage2D(faces[i], 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
+                this.gl.generateMipmap(this.gl.TEXTURE_CUBE_MAP);
+            };
+            image.onerror = () => {
+                console.log("Error loading image for cube map: " + images[i]);
+            };
+        }
+
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+
+        this.environmentTexture = texture;
+
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
+    }
+
     #clearBuffer() {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     }
 
+    #bindCubeMapTexture() {
+        this.#bindUniformInt(this.envcube, 'u_envcube_map', 1);
+        this.gl.activeTexture(this.gl.TEXTURE1);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.environmentTexture);
+    }
+
     #bindReflectTexture() {
-        this.#bindUniformInt(this.reflect, 'u_environment_map', 2);
-        this.gl.activeTexture(this.gl.TEXTURE2);
+        this.#bindUniformInt(this.reflect, 'u_environment_map', 0);
+        this.gl.activeTexture(this.gl.TEXTURE0);
         this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.reflectTexture);
     }
 
