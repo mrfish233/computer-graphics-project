@@ -85,6 +85,8 @@ let view = {
 
 // shapes
 
+let envcube = null;
+
 let cube1 = null;
 let cube2 = null;
 let cube3 = null;
@@ -124,12 +126,32 @@ async function initShapes() {
     mirror = new Cube([0.1, 8, 8], textures['white'].name);
     // mirror = new Cube([8, 8, 0.1], textures['white'].name);
 
+    const quad = new Float32Array([
+        -1, -1, 1,  1, -1, 1,
+        -1,  1, 1, -1,  1, 1,
+        1,  -1, 1,  1,  1, 1
+    ]);
+
+    envcube = new Shape();
+    envcube.setVertices(quad, quad, quad);
+
     webgl.addShape(cube1);
     webgl.addShape(cube2);
     webgl.addShape(cube3);
     webgl.addModel(soccer);
     // webgl.addShape(mirror, [0, 0, 1]);
     webgl.addShape(mirror, [1, 0, 0]);
+
+    const images = [
+        'assets/environment/posx.jpg',
+        'assets/environment/negx.jpg',
+        'assets/environment/negy.jpg',
+        'assets/environment/posy.jpg',
+        'assets/environment/posz.jpg',
+        'assets/environment/negz.jpg'
+    ];
+
+    webgl.addEnvironmentCube(envcube, images, 2048, 2048);
 }
 
 function draw() {
@@ -175,6 +197,8 @@ function draw() {
     mirrorPos.translate(-0.1, 0, mirrorZ);
 
     mirror.setModelPosMatrix(mirrorPos);
+
+    envcube.setModelMatrices(modelViewMatrix, null, null);
 
     webgl.draw();
 
