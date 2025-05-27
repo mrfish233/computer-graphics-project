@@ -28,6 +28,7 @@ class WebGL {
         this.view = null;
 
         this.shapes   = [];
+        this.refShape = null;
         this.textures = {};
 
         if (!this.gl) {
@@ -87,7 +88,7 @@ class WebGL {
         this.textures[name] = tex;
     }
 
-    addShape(shape) {
+    addShape(shape, isReflectShape = false) {
         if (!(shape instanceof Shape)) {
             console.log("Bad shape\n");
             return;
@@ -118,7 +119,12 @@ class WebGL {
         shape.setBuffers(normalBuffer, positionBuffer, texcoordBuffer);
         this.#clearBuffer();
 
-        this.shapes.push(shape);
+        if (isReflectShape) {
+            this.refShape = shape;
+        }
+        else {
+            this.shapes.push(shape);
+        }
     }
 
     addModel(model) {
@@ -165,6 +171,10 @@ class WebGL {
         for (let i = 0; i < this.shapes.length; i++) {
             this.#drawShape(this.shapes[i]);
         }
+
+        // reflection rendering
+        this.gl.useProgram(this.reflect);
+        this.#drawReflectShape();
     }
 
     #drawShadow(shape) {
@@ -216,7 +226,37 @@ class WebGL {
         this.#bindUniformMatrix4(this.program, 'u_light_mvp_matrix', shape.lightMvpMatrix.elements);
 
         // bind texture
-        this.#bindTexture(shape.texture);
+        this.#bindShadowTexture(shape.texture);
+
+        // draw the shape
+        this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
+    }
+
+    #drawReflectShape() {
+        if (this.refShape === null) {
+            return;
+        }
+
+        const shape = this.refShape;
+
+        // set up the matrices
+        let matrices = this.#computeMatrices(shape);
+
+        // bind uniforms
+        this.#bindUniformFloat(this.reflect, 'u_camera_position', this.camera);
+        this.#bindUniformFloat(this.reflect, 'u_color', [0.8, 0.8, 0.8]);
+
+        // bind vertices
+        this.#bindAttribute(this.reflect, 'a_normal',   3, shape.normalBuffer);
+        this.#bindAttribute(this.reflect, 'a_position', 3, shape.positionBuffer);
+
+        // bind matrices
+        this.#bindUniformMatrix4(this.reflect, 'u_model_matrix',  matrices.model.elements);
+        this.#bindUniformMatrix4(this.reflect, 'u_mvp_matrix',    matrices.mvp.elements);
+        this.#bindUniformMatrix4(this.reflect, 'u_normal_matrix', matrices.normal.elements);
+
+        // bind reflection texture
+        this.#bindReflectTexture();
 
         // draw the shape
         this.gl.drawArrays(shape.type, 0, shape.numOfVertices);
@@ -390,7 +430,13 @@ class WebGL {
         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
     }
 
-    #bindTexture(texture) {
+    #bindReflectTexture() {
+        this.#bindUniformInt(this.reflect, 'u_environment_map', 2);
+        this.gl.activeTexture(this.gl.TEXTURE2);
+        this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.reflectTexture);
+    }
+
+    #bindShadowTexture(texture) {
         // bind shadow texture
         this.#bindUniformInt(this.program, 'u_shadow_map', 0);
         this.gl.activeTexture(this.gl.TEXTURE0);
