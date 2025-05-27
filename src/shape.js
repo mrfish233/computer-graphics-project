@@ -31,7 +31,7 @@ class Shape {
         mat.multiply(this.modelShapeMatrix);
 
         let pos = mat.elements;
-        return [pos[12], pos[13], pos[14]];
+        return [pos[12].toFixed(2), pos[13].toFixed(2), pos[14].toFixed(2)];
     }
 
     setVertices(normals, positions, texcoords) {
