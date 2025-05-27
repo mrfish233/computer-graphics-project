@@ -11,6 +11,7 @@ class WebGL {
         this.program = null;
         this.shadow  = null;
         this.reflect = null;
+        this.envcube = null;
 
         this.depthBuffer = null;
 
@@ -42,6 +43,7 @@ class WebGL {
         this.program = await this.#compileShader('src/shader/default-vertex.glsl', 'src/shader/default-fragment.glsl');
         this.shadow  = await this.#compileShader('src/shader/shadow-vertex.glsl', 'src/shader/shadow-fragment.glsl');
         this.reflect = await this.#compileShader('src/shader/reflect-vertex.glsl', 'src/shader/reflect-fragment.glsl');
+        this.envcube = await this.#compileShader('src/shader/envcube-vertex.glsl', 'src/shader/envcube-fragment.glsl');
 
         if (!this.program || !this.shadow) {
             console.log("Failed to compile shaders");
