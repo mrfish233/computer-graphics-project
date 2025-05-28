@@ -158,6 +158,12 @@ class WebGL {
         }
     }
 
+    clearShapes() {
+        this.shapes   = [];
+        this.refShape = null;
+        this.refDir   = null;
+    }
+
     draw() {
         if (this.shapes.length === 0) {
             console.log("No shapes to draw\n");
