@@ -40,12 +40,33 @@ let mouseControl = {
     },
     wheel: (event) => {
         if (event.deltaY > 0) {
-            perspective.fov += 1;
+            cameraPosition[0] += 0.1;
+            cameraPosition[1] += 0.1;
+            cameraPosition[2] += 0.1;
         }
         else {
-            perspective.fov -= 1;
+            cameraPosition[0] -= 0.1;
+            cameraPosition[1] -= 0.1;
+            cameraPosition[2] -= 0.1;
         }
     }
+};
+
+// keyboard variables
+let keyControl = {
+    ' ': {
+        callback: () => {
+            isThirdPerson = !isThirdPerson;
+            if (isThirdPerson) {
+                cameraPosition = [4.0, 4.0, 4.0];
+                view.eye = cameraPosition;
+            } else {
+                cameraPosition = penguinPosition;
+                view.eye = penguinPosition;
+            }
+        },
+        interval: 0
+    },
 };
 
 // texture variables
@@ -60,15 +81,19 @@ let textures = {
         src: 'assets/blue.png',
         name: 'blue',
     },
-    soccer: {
-        src: 'assets/soccer/soccer.jpg',
-        name: 'soccer'
+    yellow: {
+        src: 'assets/yellow.png',
+        name: 'yellow',
+    },
+    penguin: {
+        src: 'assets/penguin/penguin.png',
+        name: 'penguin'
     }
 };
 
 // light and camera variables
 
-let lightPosition    = [1.0, 3.0, 3.0];
+let lightPosition    = [2.0, 3.0, 3.0];
 let cameraPosition   = [4.0, 4.0, 4.0];
 let lightCoefficient = {
     ambient: 0.3, diffuse: 1.2, specular: 0.9, shininess: 30
@@ -86,12 +111,12 @@ let view = {
 // shapes
 
 let envcube = null;
+let penguin = null;
 
-let cube1 = null;
-let cube2 = null;
-let cube3 = null;
-let soccer = null;
-let mirror = null;
+// game variables
+
+let isThirdPerson = true;
+let penguinPosition = [1.0, 0.0, 1.0];
 
 async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
@@ -99,7 +124,10 @@ async function main() {
     await webgl.init();
 
     initTextures();
+    initEnvCube();
     await initShapes();
+
+    keyboardController(keyControl);
     mouseController(webgl.canvas, mouseControl);
 
     draw();
@@ -116,16 +144,7 @@ function initTextures() {
     }
 }
 
-async function initShapes() {
-    cube1 = new Cube([1.0, 1.0, 3.0], textures['blue'].name);
-    cube2 = new Cube([3.0, 1.0, 1.0], textures['white'].name);
-    cube3 = new Cube([1.0, 1.0, 1.0], textures['blue'].name);
-    soccer = new Model('assets/soccer/soccer.obj', [textures['soccer'].name]);
-    await soccer.init();
-
-    mirror = new Cube([0.1, 8, 8], textures['white'].name);
-    // mirror = new Cube([8, 8, 0.1], textures['white'].name);
-
+function initEnvCube() {
     const quad = new Float32Array([
         -1, -1, 1,  1, -1, 1,
         -1,  1, 1, -1,  1, 1,
@@ -134,13 +153,6 @@ async function initShapes() {
 
     envcube = new Shape();
     envcube.setVertices(quad, quad, quad);
-
-    webgl.addShape(cube1);
-    webgl.addShape(cube2);
-    webgl.addShape(cube3);
-    webgl.addModel(soccer);
-    // webgl.addShape(mirror, [0, 0, 1]);
-    webgl.addShape(mirror, [1, 0, 0]);
 
     const images = [
         'assets/environment/posx.jpg',
@@ -154,16 +166,18 @@ async function initShapes() {
     webgl.addEnvironmentCube(envcube, images, 2048, 2048);
 }
 
+async function initShapes() {
+    penguin = new Model('assets/penguin/penguin.obj', [textures['penguin'].name]);
+    await penguin.init();
+
+    webgl.addModel(penguin);
+}
+
 function draw() {
     if (texture_count < Object.keys(textures).length) {
         requestAnimationFrame(draw);
         return;
     }
-
-    let modelViewMatrix = new Matrix4();
-    modelViewMatrix.translate(2, 0, 0);
-    // modelViewMatrix.rotate(angleX, 0, 1, 0);
-    // modelViewMatrix.rotate(angleY, 1, 0, 0);
 
     webgl.setLight(lightPosition, lightCoefficient);
     webgl.setCamera(cameraPosition);
@@ -172,36 +186,13 @@ function draw() {
     angleX = reangle(angleX);
     angleY = reangle(angleY);
 
-    let cube1Pos = new Matrix4();
-    cube1Pos.translate(0, 0, -2);
-    cube1Pos.rotate(angleX, 0, 1, 0);
+    let penguinPosMatrix = new Matrix4();
+    penguinPosMatrix.setTranslate(penguinPosition[0], penguinPosition[1], penguinPosition[2]);
+    penguinPosMatrix.rotate(180, 0, 1, 0);
 
-    cube1.setModelMatrices(modelViewMatrix, cube1Pos, null);
-
-    let cube2Pos = new Matrix4();
-    cube2Pos.translate(0, 0, 2);
-    cube2Pos.rotate(angleX, 0, 1, 0);
-
-    cube2.setModelMatrices(modelViewMatrix, cube2Pos, null);
-
-    cube3.setModelMatrices(modelViewMatrix, null, null);
-
-    let soccerPos = new Matrix4();
-    soccerPos.translate(0, 0.86, 0);
-    soccerPos.scale(3.0, 3.0, 3.0);
-
-    soccer.setModelMatrices(modelViewMatrix, soccerPos, null);
-
-    let mirrorZ   = parseFloat(document.getElementById('mirrorZ').value) / 100.0;
-    let mirrorPos = new Matrix4();
-    mirrorPos.translate(-0.1, 0, mirrorZ);
-
-    mirror.setModelPosMatrix(mirrorPos);
-
-    envcube.setModelMatrices(modelViewMatrix, null, null);
+    penguin.setModelPosMatrix(penguinPosMatrix);
 
     webgl.draw();
-
     requestAnimationFrame(draw);
 }
 
