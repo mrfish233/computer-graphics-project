@@ -160,8 +160,6 @@ let view = {
 let envcube = null;
 let penguin = null;
 
-let startCube = null;
-let endCube   = null;
 let pathCubes = [];
 
 // game variables
@@ -174,8 +172,6 @@ let penguinPosition = [1.0, 1.0, 1.0];
 let penguinFaceDir  = [0.0, 0.0, -1.0];
 let penguinUpDir    = [0.0, 1.0, 0.0];
 
-let startCubePos = [1.0, 0.0, 1.0];
-let endCubePos   = [1.0, 0.0, -4.0];
 let pathCubesPos = [
     [1.0, 0.0, 1.0],    // start
     [1.0, 0.0, 0.0],
@@ -242,16 +238,12 @@ async function initShapes() {
     penguin = new Model('assets/penguin/penguin.obj', [textures['penguin'].name]);
     await penguin.init();
 
-    startCube = new Cube(CUBE_SIZE, textures['green'].name);
-    endCube   = new Cube(CUBE_SIZE, textures['yellow'].name);
-
     webgl.addModel(penguin);
-    webgl.addShape(startCube);
-    webgl.addShape(endCube);
 
-    // skip the first and last cube
-    for (let i = 1; i < pathCubesPos.length - 1; i++) {
-        let cube = new Cube(CUBE_SIZE, textures['white'].name);
+    for (let i = 0; i < pathCubesPos.length; i++) {
+        let tex = i === 0 ? textures['green'] : (i === pathCubesPos.length - 1 ? textures['yellow'] : textures['white']);
+
+        let cube = new Cube(CUBE_SIZE, tex.name);
 
         let posMatrix = new Matrix4();
         posMatrix.setTranslate(pathCubesPos[i][0], pathCubesPos[i][1], pathCubesPos[i][2]);
@@ -293,14 +285,7 @@ function draw() {
 }
 
 function drawFixed() {
-    let startCubePosMatrix = new Matrix4();
-    startCubePosMatrix.setTranslate(startCubePos[0], startCubePos[1], startCubePos[2]);
 
-    let endCubePosMatrix = new Matrix4();
-    endCubePosMatrix.setTranslate(endCubePos[0], endCubePos[1], endCubePos[2]);
-
-    startCube.setModelPosMatrix(startCubePosMatrix);
-    endCube.setModelPosMatrix(endCubePosMatrix);
 }
 
 function canMoveForward() {
