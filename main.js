@@ -86,7 +86,30 @@ let keyControl = {
             }
         },
         interval: 0
-    }
+    },
+    'w': {
+        callback: () => {
+            if (isThirdPerson) {
+                return;
+            }
+
+            if (canMoveForward() && penguinMoveDist <= 0.0) {
+                console.log('Moving forward');
+                penguinMoveDist += 1;
+            }
+        },
+        interval: 0
+    },
+    'a': {
+        callback: () => {
+            if (isThirdPerson) {
+                return;
+            }
+
+            
+        },
+        interval: 0
+    },
 };
 
 // texture variables
@@ -154,11 +177,18 @@ let penguinUpDir    = [0.0, 1.0, 0.0];
 let startCubePos = [1.0, 0.0, 1.0];
 let endCubePos   = [1.0, 0.0, -4.0];
 let pathCubesPos = [
+    [1.0, 0.0, 1.0],    // start
     [1.0, 0.0, 0.0],
     [1.0, 0.0, -1.0],
     [1.0, 0.0, -2.0],
-    [1.0, 0.0, -3.0]
+    [1.0, 0.0, -3.0],
+    [1.0, 0.0, -4.0]    // end
 ];
+
+// animation variables
+
+let penguinMoveSpeed = 0.05;
+let penguinMoveDist = 0.0;
 
 async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
@@ -219,11 +249,14 @@ async function initShapes() {
     webgl.addShape(startCube);
     webgl.addShape(endCube);
 
-    for (let i = 0; i < pathCubesPos.length; i++) {
+    // skip the first and last cube
+    for (let i = 1; i < pathCubesPos.length - 1; i++) {
         let cube = new Cube(CUBE_SIZE, textures['white'].name);
+
         let posMatrix = new Matrix4();
         posMatrix.setTranslate(pathCubesPos[i][0], pathCubesPos[i][1], pathCubesPos[i][2]);
         cube.setModelPosMatrix(posMatrix);
+
         pathCubes.push(cube);
         webgl.addShape(cube);
     }
@@ -242,10 +275,13 @@ function draw() {
     angleX = reangle(angleX);
     angleY = reangle(angleY);
 
+    updatePenguinPosition();
+
     let penguinBaseMatrix = new Matrix4();
-    penguinBaseMatrix.translate(0.5, 0.0, 0.5);
+    penguinBaseMatrix.translate(0.0, -0.4, 0.0);
 
     let penguinPosMatrix = new Matrix4();
+    penguinPosMatrix.scale(0.95, 0.95, 0.95);
     penguinPosMatrix.translate(penguinPosition[0], penguinPosition[1], penguinPosition[2]);
     penguinPosMatrix.rotate(180, 0, 1, 0);
 
@@ -265,6 +301,55 @@ function drawFixed() {
 
     startCube.setModelPosMatrix(startCubePosMatrix);
     endCube.setModelPosMatrix(endCubePosMatrix);
+}
+
+function canMoveForward() {
+    let nextPos = [
+        penguinPosition[0] + penguinFaceDir[0],
+        penguinPosition[1] + penguinFaceDir[1],
+        penguinPosition[2] + penguinFaceDir[2]
+    ];
+
+    // check if next position has a cube below the penguin
+    for (let i = 0; i < pathCubesPos.length; i++) {
+        const x = pathCubesPos[i][0] + view.up[0];
+        const y = pathCubesPos[i][1] + view.up[1];
+        const z = pathCubesPos[i][2] + view.up[2];
+
+        if (x - penguinMoveSpeed * 2 <= nextPos[0] && nextPos[0] <= x + penguinMoveSpeed * 2 &&
+            y - penguinMoveSpeed * 2 <= nextPos[1] && nextPos[1] <= y + penguinMoveSpeed * 2 &&
+            z - penguinMoveSpeed * 2 <= nextPos[2] && nextPos[2] <= z + penguinMoveSpeed * 2) {
+            console.log("nextPos:", nextPos, "\npathCubesPos[i]:", pathCubesPos[i]);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function updatePenguinPosition() {
+    if (penguinMoveDist > 0.0) {
+        penguinMoveDist -= penguinMoveSpeed;
+
+        if (penguinMoveDist < 0.0) {
+            penguinMoveDist = 0.0;
+        }
+
+        penguinPosition[0] += penguinFaceDir[0] * penguinMoveSpeed;
+        penguinPosition[1] += penguinFaceDir[1] * penguinMoveSpeed;
+        penguinPosition[2] += penguinFaceDir[2] * penguinMoveSpeed;
+
+        view.eye = [
+            penguinPosition[0],
+            penguinPosition[1] + 0.5,
+            penguinPosition[2]
+        ];
+        view.at = [
+            penguinPosition[0] + penguinFaceDir[0],
+            penguinPosition[1] + penguinFaceDir[1] + 0.5,
+            penguinPosition[2] + penguinFaceDir[2]
+        ];
+    }
 }
 
 function reangle(angle) {
