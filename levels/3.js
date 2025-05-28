@@ -22,9 +22,10 @@ let envcube = null;
 let penguin = null;
 let mirror  = null;
 
-let staticCubes = [];
-let group1Cubes = [];
-let group2Cubes = [];
+let staticCubes  = [];
+let dynamicCubes = [];
+let group1Cubes  = [];
+let group2Cubes  = [];
 
 // game variables
 
@@ -32,9 +33,10 @@ const CUBE_SIZE = [1.0, 1.0, 1.0];
 
 let isThirdPerson = true;
 let toggleViewTrigger = async () => {
-    staticCubes = [];
-    group1Cubes = [];
-    group2Cubes = [];
+    staticCubes  = [];
+    dynamicCubes = [];
+    group1Cubes  = [];
+    group2Cubes  = [];
 
     webgl.clearShapes();
     await initShapes();
@@ -70,6 +72,12 @@ let staticCubesPos = [
     [-4.0, 0.0, -4.0],
 ];
 
+let dynamicCubesPos = [
+    [5.0, 0.0, 5.0],
+    [-5.0, 0.0, -5.0],
+    [5.0, 0.0, -5.0]
+];
+
 let group1CubesPos = [
     [3.0, 0.0, 4],
     [3.0, 0.0, 3],
@@ -100,6 +108,8 @@ let mirrorZ = 5;
 
 // animation variables
 
+let angleDelta = 0;
+
 let penguinMoveSpeed = 0.05;
 let penguinMoveDist = 0.0;
 
@@ -122,7 +132,7 @@ async function initShapes() {
     penguin = new Model('assets/penguin/penguin.obj', [textures['penguin'].name]);
     await penguin.init();
 
-    mirror = new Cube([0.1, 4.0, 1.8], textures['white'].name);
+    mirror = new Cube([0.1, 6.0, 1.8], textures['white'].name);
     webgl.addShape(mirror, [1, 0, 0]);
     webgl.addModel(penguin);
 
@@ -148,6 +158,19 @@ async function initShapes() {
         group1Cubes.push(cube);
         webgl.addShape(cube);
     }
+
+    let names = [
+        textures['blue'].name,
+        textures['yellow'].name,
+        textures['white'].name,
+        textures['green'].name
+    ];
+
+    for (let i = 0; i < dynamicCubesPos.length; i++) {
+        let cube = new Cube([0.7, 0.7, 0.7], names[i % names.length]);
+        dynamicCubes.push(cube);
+        webgl.addShape(cube);
+    }
 }
 
 function draw() {
@@ -162,6 +185,7 @@ function draw() {
 
     angleX = reangle(angleX);
     angleY = reangle(angleY);
+    angleDelta += 0.5;
 
     updatePenguinPosition();
 
@@ -178,6 +202,16 @@ function draw() {
     penguinPosMatrix.rotate(penguinAngles[2], 0, 0, 1); // roll
 
     penguin.setModelMatrices(penguinBaseMatrix, penguinPosMatrix);
+
+    for (let i = 0; i < dynamicCubes.length; i++) {
+        let cube = dynamicCubes[i];
+
+        let posMatrix = new Matrix4();
+        posMatrix.setRotate(angleDelta, 0, 1, 0);
+        posMatrix.translate(dynamicCubesPos[i][0], dynamicCubesPos[i][1], dynamicCubesPos[i][2]);
+
+        cube.setModelPosMatrix(posMatrix);
+    }
 
     mirrorZ = document.getElementById('mirror-z').value;
     let mirrorPos = new Matrix4();

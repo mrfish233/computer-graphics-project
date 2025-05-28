@@ -21,8 +21,9 @@ let view = {
 let envcube = null;
 let penguin = null;
 
-let staticCubes = [];
-let group1Cubes = [];
+let staticCubes  = [];
+let dynamicCubes = [];
+let group1Cubes  = [];
 
 // game variables
 
@@ -38,6 +39,11 @@ let staticCubesPos = [
     [1.0, 0.0, -4.0],
 ];
 
+let dynamicCubesPos = [
+    [5.0, 0.0, 5.0],
+    [-5.0, 0.0, -5.0]
+];
+
 let group1CubeCenter = [1.0, 0.0, -1.0];
 let group1CubeCount  = 3;
 
@@ -51,6 +57,8 @@ let penguinUpDir    = [0.0, 1.0, 0.0];
 let penguinAngles   = [0.0, 0.0, 0.0]; // pitch, yaw, roll
 
 // animation variables
+
+let angleDelta = 0;
 
 let penguinMoveSpeed = 0.05;
 let penguinMoveDist = 0.0;
@@ -94,6 +102,19 @@ async function initShapes() {
         group1Cubes.push(cube);
         webgl.addShape(cube);
     }
+
+    let names = [
+        textures['blue'].name,
+        textures['yellow'].name,
+        textures['white'].name,
+        textures['green'].name
+    ];
+
+    for (let i = 0; i < dynamicCubesPos.length; i++) {
+        let cube = new Cube([0.7, 0.7, 0.7], names[i % names.length]);
+        dynamicCubes.push(cube);
+        webgl.addShape(cube);
+    }
 }
 
 function draw() {
@@ -108,6 +129,7 @@ function draw() {
 
     angleX = reangle(angleX);
     angleY = reangle(angleY);
+    angleDelta += 0.5;
 
     updatePenguinPosition();
 
@@ -136,6 +158,16 @@ function draw() {
         shapeMatrix.setTranslate(i-1, 0.0, 0.0);
         cube.setModelPosMatrix(cube1PosMatrix);
         cube.setModelShapeMatrix(shapeMatrix);
+    }
+
+    for (let i = 0; i < dynamicCubes.length; i++) {
+        let cube = dynamicCubes[i];
+
+        let posMatrix = new Matrix4();
+        posMatrix.setRotate(angleDelta, 0, 1, 0);
+        posMatrix.translate(dynamicCubesPos[i][0], dynamicCubesPos[i][1], dynamicCubesPos[i][2]);
+
+        cube.setModelPosMatrix(posMatrix);
     }
 
     webgl.draw();
