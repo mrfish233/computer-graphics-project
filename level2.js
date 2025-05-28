@@ -110,7 +110,113 @@ let keyControl = {
                 return;
             }
 
-            
+            console.log(penguinUpDir);
+
+            // turn angles based on the penguin's up direction
+            if (penguinUpDir[0] == 1) {
+                penguinAngles[0] -= 90;
+
+                if (penguinFaceDir[1] == -1) {
+                    penguinFaceDir = [0.0, 0.0, -1.0];
+                }
+                else if (penguinFaceDir[1] == 1) {
+                    penguinFaceDir = [0.0, 0.0, 1.0];
+                }
+                else if (penguinFaceDir[2] == -1) {
+                    penguinFaceDir = [-1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[2] == 1) {
+                    penguinFaceDir = [1.0, 0.0, 0.0];
+                }
+            }
+            else if (penguinUpDir[0] == -1) {
+                penguinAngles[0] += 90;
+
+                if (penguinFaceDir[1] == -1) {
+                    penguinFaceDir = [0.0, 0.0, 1.0];
+                }
+                else if (penguinFaceDir[1] == 1) {
+                    penguinFaceDir = [0.0, 0.0, -1.0];
+                }
+                else if (penguinFaceDir[2] == -1) {
+                    penguinFaceDir = [1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[2] == 1) {
+                    penguinFaceDir = [-1.0, 0.0, 0.0];
+                }
+            }
+            else if (penguinUpDir[1] == 1) {
+                penguinAngles[1] += 90;
+
+                if (penguinFaceDir[2] == -1) {
+                    penguinFaceDir = [-1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[2] == 1) {
+                    penguinFaceDir = [1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[0] == -1) {
+                    penguinFaceDir = [0.0, 0.0, 1.0];
+                }
+                else if (penguinFaceDir[0] == 1) {
+                    penguinFaceDir = [0.0, 0.0, -1.0];
+                }
+            }
+            else if (penguinUpDir[1] == -1) {
+                penguinAngles[1] -= 90;
+
+                if (penguinFaceDir[2] == -1) {
+                    penguinFaceDir = [1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[2] == 1) {
+                    penguinFaceDir = [-1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[0] == -1) {
+                    penguinFaceDir = [0.0, 0.0, -1.0];
+                }
+                else if (penguinFaceDir[0] == 1) {
+                    penguinFaceDir = [0.0, 0.0, 1.0];
+                }
+            }
+            else if (penguinUpDir[2] == 1) {
+                penguinAngles[2] -= 90;
+
+                if (penguinFaceDir[1] == -1) {
+                    penguinFaceDir = [-1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[1] == 1) {
+                    penguinFaceDir = [1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[0] == -1) {
+                    penguinFaceDir = [0.0, 0.0, -1.0];
+                }
+                else if (penguinFaceDir[0] == 1) {
+                    penguinFaceDir = [0.0, 0.0, 1.0];
+                }
+            }
+            else if (penguinUpDir[2] == -1) {
+                penguinAngles[2] += 90;
+
+                if (penguinFaceDir[1] == -1) {
+                    penguinFaceDir = [1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[1] == 1) {
+                    penguinFaceDir = [-1.0, 0.0, 0.0];
+                }
+                else if (penguinFaceDir[0] == -1) {
+                    penguinFaceDir = [0.0, 0.0, 1.0];
+                }
+                else if (penguinFaceDir[0] == 1) {
+                    penguinFaceDir = [0.0, 0.0, -1.0];
+                }
+            }
+
+            view.at = [
+                penguinPosition[0] + penguinFaceDir[0],
+                penguinPosition[1] + penguinFaceDir[1] + 0.5,
+                penguinPosition[2] + penguinFaceDir[2]
+            ];
+
+            webgl.setPerspectiveView(perspective, view);
         },
         interval: 0
     },
@@ -190,6 +296,7 @@ let penguinPosition = [
 ];
 let penguinFaceDir  = [0.0, 0.0, -1.0];
 let penguinUpDir    = [0.0, 1.0, 0.0];
+let penguinAngles   = [0.0, 0.0, 0.0]; // pitch, yaw, roll
 
 // animation variables
 
@@ -293,6 +400,10 @@ function draw() {
     penguinPosMatrix.translate(penguinPosition[0], penguinPosition[1], penguinPosition[2]);
     penguinPosMatrix.rotate(180, 0, 1, 0);
 
+    penguinPosMatrix.rotate(penguinAngles[0], 1, 0, 0); // pitch
+    penguinPosMatrix.rotate(penguinAngles[1], 0, 1, 0); // yaw
+    penguinPosMatrix.rotate(penguinAngles[2], 0, 0, 1); // roll
+
     penguin.setModelMatrices(penguinBaseMatrix, penguinPosMatrix);
 
     // group 1 cubes
@@ -325,10 +436,10 @@ function canMoveForward() {
         const y = staticCubesPos[i][1] + view.up[1];
         const z = staticCubesPos[i][2] + view.up[2];
 
+        console.log("nextPos:", nextPos, "\npathCubesPos[i]:", staticCubesPos[i]);
         if (x - penguinMoveSpeed * 2 <= nextPos[0] && nextPos[0] <= x + penguinMoveSpeed * 2 &&
             y - penguinMoveSpeed * 2 <= nextPos[1] && nextPos[1] <= y + penguinMoveSpeed * 2 &&
             z - penguinMoveSpeed * 2 <= nextPos[2] && nextPos[2] <= z + penguinMoveSpeed * 2) {
-            console.log("nextPos:", nextPos, "\npathCubesPos[i]:", staticCubesPos[i]);
             return true;
         }
     }
