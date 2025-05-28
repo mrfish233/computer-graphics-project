@@ -20,7 +20,8 @@ let mouseControl = {
         let rect = event.target.getBoundingClientRect();
 
         if (rect.left <= x && x <= rect.right &&
-            rect.top  <= y && y <= rect.bottom) {
+            rect.top  <= y && y <= rect.bottom &&
+            isThirdPerson) {
             mouseDrag  = true;
             canReangle = false;
         }
@@ -57,6 +58,9 @@ let keyControl = {
     ' ': {
         callback: () => {
             isThirdPerson = !isThirdPerson;
+            mouseDrag  = false;
+            canReangle = true;
+
             if (isThirdPerson) {
                 cameraPosition = [4.0, 4.0, 4.0];
                 view = {
