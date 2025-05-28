@@ -160,7 +160,8 @@ let view = {
 let envcube = null;
 let penguin = null;
 
-let pathCubes = [];
+let staticCubes = [];
+let group1Cubes = [];
 
 // game variables
 
@@ -168,18 +169,23 @@ const CUBE_SIZE = [1.0, 1.0, 1.0];
 
 let isThirdPerson = true;
 
-let penguinPosition = [1.0, 1.0, 1.0];
+let staticCubesPos = [
+    [1.0, 0.0, 2.0],
+    [1.0, 0.0, 1.0],
+    [1.0, 0.0, -3.0],
+    [1.0, 0.0, -4.0],
+];
+
+let group1CubeCenter = [1.0, 0.0, -1.0];
+let group1CubeCount  = 3;
+
+let penguinPosition = [
+    staticCubesPos[0][0],
+    staticCubesPos[0][1] + 1.0,
+    staticCubesPos[0][2]
+];
 let penguinFaceDir  = [0.0, 0.0, -1.0];
 let penguinUpDir    = [0.0, 1.0, 0.0];
-
-let pathCubesPos = [
-    [1.0, 0.0, 1.0],    // start
-    [1.0, 0.0, 0.0],
-    [1.0, 0.0, -1.0],
-    [1.0, 0.0, -2.0],
-    [1.0, 0.0, -3.0],
-    [1.0, 0.0, -4.0]    // end
-];
 
 // animation variables
 
@@ -240,16 +246,22 @@ async function initShapes() {
 
     webgl.addModel(penguin);
 
-    for (let i = 0; i < pathCubesPos.length; i++) {
-        let tex = i === 0 ? textures['green'] : (i === pathCubesPos.length - 1 ? textures['yellow'] : textures['white']);
+    for (let i = 0; i < staticCubesPos.length; i++) {
+        let tex = i === 0 ? textures['green'] : (i === staticCubesPos.length - 1 ? textures['yellow'] : textures['white']);
 
         let cube = new Cube(CUBE_SIZE, tex.name);
 
         let posMatrix = new Matrix4();
-        posMatrix.setTranslate(pathCubesPos[i][0], pathCubesPos[i][1], pathCubesPos[i][2]);
+        posMatrix.setTranslate(staticCubesPos[i][0], staticCubesPos[i][1], staticCubesPos[i][2]);
         cube.setModelPosMatrix(posMatrix);
 
-        pathCubes.push(cube);
+        staticCubes.push(cube);
+        webgl.addShape(cube);
+    }
+
+    for (let i = 0; i < group1CubeCount; i++) {
+        let cube = new Cube(CUBE_SIZE, textures['blue'].name);
+        group1Cubes.push(cube);
         webgl.addShape(cube);
     }
 }
@@ -279,13 +291,21 @@ function draw() {
 
     penguin.setModelMatrices(penguinBaseMatrix, penguinPosMatrix);
 
-    drawFixed();
+    // group 1 cubes
+    let cube1PosMatrix = new Matrix4();
+    cube1PosMatrix.translate(1.0, 0.0, -1.0);
+    cube1PosMatrix.rotate(angleX, 0.0, 1.0, 0.0);
+
+    for (let i = 0; i < group1Cubes.length; i++) {
+        let cube = group1Cubes[i];
+        let shapeMatrix = new Matrix4();
+        shapeMatrix.setTranslate(i-1, 0.0, 0.0);
+        cube.setModelPosMatrix(cube1PosMatrix);
+        cube.setModelShapeMatrix(shapeMatrix);
+    }
+
     webgl.draw();
     requestAnimationFrame(draw);
-}
-
-function drawFixed() {
-
 }
 
 function canMoveForward() {
@@ -296,20 +316,45 @@ function canMoveForward() {
     ];
 
     // check if next position has a cube below the penguin
-    for (let i = 0; i < pathCubesPos.length; i++) {
-        const x = pathCubesPos[i][0] + view.up[0];
-        const y = pathCubesPos[i][1] + view.up[1];
-        const z = pathCubesPos[i][2] + view.up[2];
+    for (let i = 0; i < staticCubesPos.length; i++) {
+        const x = staticCubesPos[i][0] + view.up[0];
+        const y = staticCubesPos[i][1] + view.up[1];
+        const z = staticCubesPos[i][2] + view.up[2];
 
         if (x - penguinMoveSpeed * 2 <= nextPos[0] && nextPos[0] <= x + penguinMoveSpeed * 2 &&
             y - penguinMoveSpeed * 2 <= nextPos[1] && nextPos[1] <= y + penguinMoveSpeed * 2 &&
             z - penguinMoveSpeed * 2 <= nextPos[2] && nextPos[2] <= z + penguinMoveSpeed * 2) {
-            console.log("nextPos:", nextPos, "\npathCubesPos[i]:", pathCubesPos[i]);
+            console.log("nextPos:", nextPos, "\npathCubesPos[i]:", staticCubesPos[i]);
+            return true;
+        }
+    }
+
+    // check if next position has a group 1 cube below the penguin
+    for (let i = 0; i < group1Cubes.length; i++) {
+        const block = group1Cubes[i].getPos();
+        const x = parseFloat(block[0]) + view.up[0];
+        const y = parseFloat(block[1]) + view.up[1];
+        const z = parseFloat(block[2]) + view.up[2];
+
+        console.log("nextPos:", nextPos, "\nblock: ", block, "\nxyz: ", x, y, z);
+        if (x - penguinMoveSpeed * 2 <= nextPos[0] && nextPos[0] <= x + penguinMoveSpeed * 2 &&
+            y - penguinMoveSpeed * 2 <= nextPos[1] && nextPos[1] <= y + penguinMoveSpeed * 2 &&
+            z - penguinMoveSpeed * 2 <= nextPos[2] && nextPos[2] <= z + penguinMoveSpeed * 2) {
             return true;
         }
     }
 
     return false;
+}
+
+function checkHasBlock(pos, block) {
+    const x = block[0] + view.up[0];
+    const y = block[1] + view.up[1];
+    const z = block[2] + view.up[2];
+
+    return (x - penguinMoveSpeed * 2 <= pos[0] && pos[0] <= x + penguinMoveSpeed * 2 &&
+            y - penguinMoveSpeed * 2 <= pos[1] && pos[1] <= y + penguinMoveSpeed * 2 &&
+            z - penguinMoveSpeed * 2 <= pos[2] && pos[2] <= z + penguinMoveSpeed * 2);
 }
 
 function updatePenguinPosition() {
