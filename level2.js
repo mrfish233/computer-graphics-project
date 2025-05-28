@@ -141,3 +141,42 @@ function draw() {
     webgl.draw();
     requestAnimationFrame(draw);
 }
+
+function canMoveForward() {
+    let nextPos = [
+        penguinPosition[0] + penguinFaceDir[0],
+        penguinPosition[1] + penguinFaceDir[1],
+        penguinPosition[2] + penguinFaceDir[2]
+    ];
+
+    // check if next position has a cube below the penguin
+    for (let i = 0; i < staticCubesPos.length; i++) {
+        const x = staticCubesPos[i][0] + view.up[0];
+        const y = staticCubesPos[i][1] + view.up[1];
+        const z = staticCubesPos[i][2] + view.up[2];
+
+        console.log("nextPos:", nextPos, "\npathCubesPos[i]:", staticCubesPos[i]);
+        if (x - penguinMoveSpeed * 2 <= nextPos[0] && nextPos[0] <= x + penguinMoveSpeed * 2 &&
+            y - penguinMoveSpeed * 2 <= nextPos[1] && nextPos[1] <= y + penguinMoveSpeed * 2 &&
+            z - penguinMoveSpeed * 2 <= nextPos[2] && nextPos[2] <= z + penguinMoveSpeed * 2) {
+            return true;
+        }
+    }
+
+    // check if next position has a group 1 cube below the penguin
+    for (let i = 0; i < group1Cubes.length; i++) {
+        const block = group1Cubes[i].getPos();
+        const x = parseFloat(block[0]) + view.up[0];
+        const y = parseFloat(block[1]) + view.up[1];
+        const z = parseFloat(block[2]) + view.up[2];
+
+        console.log("nextPos:", nextPos, "\nblock: ", block, "\nxyz: ", x, y, z);
+        if (x - penguinMoveSpeed * 2 <= nextPos[0] && nextPos[0] <= x + penguinMoveSpeed * 2 &&
+            y - penguinMoveSpeed * 2 <= nextPos[1] && nextPos[1] <= y + penguinMoveSpeed * 2 &&
+            z - penguinMoveSpeed * 2 <= nextPos[2] && nextPos[2] <= z + penguinMoveSpeed * 2) {
+            return true;
+        }
+    }
+
+    return false;
+}
