@@ -56,7 +56,7 @@ let mouseControl = {
 // keyboard variables
 let keyControl = {
     ' ': {
-        callback: () => {
+        callback: async () => {
             isThirdPerson = !isThirdPerson;
             mouseDrag  = false;
             canReangle = true;
@@ -88,6 +88,8 @@ let keyControl = {
                     up: penguinUpDir
                 };
             }
+
+            await toggleViewTrigger();
         },
         interval: 0
     },

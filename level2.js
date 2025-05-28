@@ -29,6 +29,7 @@ let group1Cubes = [];
 const CUBE_SIZE = [1.0, 1.0, 1.0];
 
 let isThirdPerson = true;
+let toggleViewTrigger = () => {};
 
 let staticCubesPos = [
     [1.0, 0.0, 2.0],
