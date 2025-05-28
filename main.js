@@ -59,14 +59,34 @@ let keyControl = {
             isThirdPerson = !isThirdPerson;
             if (isThirdPerson) {
                 cameraPosition = [4.0, 4.0, 4.0];
-                view.eye = cameraPosition;
+                view = {
+                    eye: cameraPosition,
+                    at:  [0.0, 0.0, 0.0],
+                    up:  [0.0, 1.0, 0.0]
+                };
             } else {
-                cameraPosition = penguinPosition;
-                view.eye = penguinPosition;
+                cameraPosition = [
+                    penguinPosition[0],
+                    penguinPosition[1] + 0.5,
+                    penguinPosition[2]
+                ];
+                view = {
+                    eye: [
+                        penguinPosition[0],
+                        penguinPosition[1] + 0.5,
+                        penguinPosition[2]
+                    ],
+                    at:  [
+                        penguinPosition[0] + penguinFaceDir[0],
+                        penguinPosition[1] + penguinFaceDir[1] + 0.5,
+                        penguinPosition[2] + penguinFaceDir[2]
+                    ],
+                    up: penguinUpDir
+                };
             }
         },
         interval: 0
-    },
+    }
 };
 
 // texture variables
@@ -85,6 +105,10 @@ let textures = {
         src: 'assets/yellow.png',
         name: 'yellow',
     },
+    green: {
+        src: 'assets/green.png',
+        name: 'green',
+    },
     penguin: {
         src: 'assets/penguin/penguin.png',
         name: 'penguin'
@@ -93,7 +117,7 @@ let textures = {
 
 // light and camera variables
 
-let lightPosition    = [2.0, 3.0, 3.0];
+let lightPosition    = [3.0, 3.0, 3.0];
 let cameraPosition   = [4.0, 4.0, 4.0];
 let lightCoefficient = {
     ambient: 0.3, diffuse: 1.2, specular: 0.9, shininess: 30
@@ -113,10 +137,28 @@ let view = {
 let envcube = null;
 let penguin = null;
 
+let startCube = null;
+let endCube   = null;
+let pathCubes = [];
+
 // game variables
 
+const CUBE_SIZE = [1.0, 1.0, 1.0];
+
 let isThirdPerson = true;
-let penguinPosition = [1.0, 0.0, 1.0];
+
+let penguinPosition = [1.0, 1.0, 1.0];
+let penguinFaceDir  = [0.0, 0.0, -1.0];
+let penguinUpDir    = [0.0, 1.0, 0.0];
+
+let startCubePos = [1.0, 0.0, 1.0];
+let endCubePos   = [1.0, 0.0, -4.0];
+let pathCubesPos = [
+    [1.0, 0.0, 0.0],
+    [1.0, 0.0, -1.0],
+    [1.0, 0.0, -2.0],
+    [1.0, 0.0, -3.0]
+];
 
 async function main() {
     const canvasDiv = document.getElementsByClassName('cv');
@@ -170,7 +212,21 @@ async function initShapes() {
     penguin = new Model('assets/penguin/penguin.obj', [textures['penguin'].name]);
     await penguin.init();
 
+    startCube = new Cube(CUBE_SIZE, textures['green'].name);
+    endCube   = new Cube(CUBE_SIZE, textures['yellow'].name);
+
     webgl.addModel(penguin);
+    webgl.addShape(startCube);
+    webgl.addShape(endCube);
+
+    for (let i = 0; i < pathCubesPos.length; i++) {
+        let cube = new Cube(CUBE_SIZE, textures['white'].name);
+        let posMatrix = new Matrix4();
+        posMatrix.setTranslate(pathCubesPos[i][0], pathCubesPos[i][1], pathCubesPos[i][2]);
+        cube.setModelPosMatrix(posMatrix);
+        pathCubes.push(cube);
+        webgl.addShape(cube);
+    }
 }
 
 function draw() {
@@ -186,14 +242,29 @@ function draw() {
     angleX = reangle(angleX);
     angleY = reangle(angleY);
 
+    let penguinBaseMatrix = new Matrix4();
+    penguinBaseMatrix.translate(0.5, 0.0, 0.5);
+
     let penguinPosMatrix = new Matrix4();
-    penguinPosMatrix.setTranslate(penguinPosition[0], penguinPosition[1], penguinPosition[2]);
+    penguinPosMatrix.translate(penguinPosition[0], penguinPosition[1], penguinPosition[2]);
     penguinPosMatrix.rotate(180, 0, 1, 0);
 
-    penguin.setModelPosMatrix(penguinPosMatrix);
+    penguin.setModelMatrices(penguinBaseMatrix, penguinPosMatrix);
 
+    drawFixed();
     webgl.draw();
     requestAnimationFrame(draw);
+}
+
+function drawFixed() {
+    let startCubePosMatrix = new Matrix4();
+    startCubePosMatrix.setTranslate(startCubePos[0], startCubePos[1], startCubePos[2]);
+
+    let endCubePosMatrix = new Matrix4();
+    endCubePosMatrix.setTranslate(endCubePos[0], endCubePos[1], endCubePos[2]);
+
+    startCube.setModelPosMatrix(startCubePosMatrix);
+    endCube.setModelPosMatrix(endCubePosMatrix);
 }
 
 function reangle(angle) {
